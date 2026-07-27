@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KIRIL — Developer & AI Builder</title>
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050505;--bg2:#0a0a0f;--bg3:#0f0f18;
+  --text:#f0f0ff;--muted:#6b6b8a;
+  --cyan:#00ffcc;--purple:#a855f7;--blue:#3b82f6;
+  --border:rgba(255,255,255,0.07);
+  --fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'Space Mono',monospace;
+  --ease:cubic-bezier(0.16,1,0.3,1);
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);font-weight:300;line-height:1.7;overflow-x:hidden;cursor:none}
+::selection{background:rgba(0,255,204,0.2);color:var(--cyan)}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-thumb{background:linear-gradient(var(--cyan),var(--purple));border-radius:3px}
+
+/* CURSOR */
+#cur-dot,#cur-ring{position:fixed;pointer-events:none;z-index:9999;border-radius:50%;transform:translate(-50%,-50%)}
+#cur-dot{width:6px;height:6px;background:var(--cyan);transition:transform .1s}
+#cur-ring{width:32px;height:32px;border:1px solid rgba(0,255,204,.35);transition:width .3s,height .3s,border-color .3s}
+@media(pointer:coarse){body{cursor:auto}#cur-dot,#cur-ring{display:none}}
+
+/* BG */
+#bg-canvas{position:fixed;inset:0;width:100%;height:100%;z-index:-2;pointer-events:none}
+.aurora{position:fixed;inset:-20% -10% auto -10%;height:70vh;filter:blur(80px);opacity:.55;
+  background:radial-gradient(600px 300px at 20% 40%,rgba(0,255,204,.12),transparent 60%),
+             radial-gradient(500px 280px at 75% 25%,rgba(168,85,247,.1),transparent 60%),
+             radial-gradient(400px 260px at 50% 70%,rgba(59,130,246,.08),transparent 60%);
+  animation:aurora 18s ease-in-out infinite alternate;z-index:-1;pointer-events:none}
+@keyframes aurora{0%{transform:translateY(0) scale(1)}50%{transform:translateY(15px) translateX(-10px) scale(1.04)}100%{transform:translateY(-12px) translateX(10px) scale(1.06)}}
+
+/* HEADER */
+.site-header{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(1.5rem,5vw,4rem);height:68px;background:rgba(5,5,5,.8);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);transition:background .4s}
+.site-header.scrolled{background:rgba(5,5,5,.96)}
+.site-logo{font-family:var(--fh);font-weight:800;font-size:1.4rem;letter-spacing:.1em;color:var(--text);text-decoration:none;z-index:1100;position:relative}
+.site-logo span{color:var(--cyan)}
+.hamburger{position:relative;z-index:1100;width:40px;height:40px;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:5px;background:none;border:none;cursor:none;padding:6px}
+.hl{display:block;height:1.5px;background:var(--text);border-radius:2px;transform-origin:right;transition:width .3s var(--ease),transform .4s var(--ease),opacity .3s,background .3s}
+.hl:nth-child(1){width:26px}.hl:nth-child(2){width:18px}.hl:nth-child(3){width:22px}
+.hamburger:hover .hl{background:var(--cyan)}.hamburger:hover .hl:nth-child(2){width:26px}
+.menu-open .hl:nth-child(1){width:26px;transform:translateY(6.5px) rotate(45deg);background:var(--cyan)}
+.menu-open .hl:nth-child(2){opacity:0;width:0}
+.menu-open .hl:nth-child(3){width:26px;transform:translateY(-6.5px) rotate(-45deg);background:var(--cyan)}
+
+/* NAV OVERLAY */
+.nav-overlay{position:fixed;inset:0;z-index:1050;display:grid;grid-template-columns:1fr 1fr;pointer-events:none;visibility:hidden}
+.nav-overlay.is-open{pointer-events:all;visibility:visible}
+.nav-panel{background:var(--bg2);display:flex;flex-direction:column;justify-content:center;padding:clamp(2rem,8vw,6rem);transform:translateX(-100%);transition:transform .6s var(--ease)}
+.nav-deco{background:var(--bg3);position:relative;overflow:hidden;transform:translateX(100%);transition:transform .6s var(--ease) .1s}
+.nav-overlay.is-open .nav-panel,.nav-overlay.is-open .nav-deco{transform:translateX(0)}
+.nav-deco::before{content:'';position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:55px 55px}
+.nav-deco::after{content:'KIRIL';position:absolute;bottom:-.1em;right:-.05em;font-family:var(--fh);font-weight:800;font-size:clamp(5rem,16vw,14rem);line-height:1;color:transparent;-webkit-text-stroke:1px rgba(0,255,204,.07)}
+.nav-list{list-style:none;display:flex;flex-direction:column;gap:.2rem;counter-reset:nc}
+.nav-list li{overflow:hidden}
+.nav-list a{display:inline-flex;align-items:center;gap:.75rem;font-family:var(--fh);font-weight:700;font-size:clamp(1.4rem,3vw,2.5rem);color:var(--muted);text-decoration:none;padding:.2em 0;transition:color .3s,transform .3s var(--ease)}
+.nav-list a::before{content:'0' counter(nc);counter-increment:nc;font-family:var(--fm);font-size:.6rem;color:var(--cyan);opacity:0;transition:opacity .3s;flex-shrink:0}
+.nav-list a:hover{color:var(--text);transform:translateX(10px)}.nav-list a:hover::before{opacity:1}
+.nav-foot{margin-top:auto;padding-top:2rem;font-family:var(--fm);font-size:.7rem;color:var(--muted);letter-spacing:.08em}
+.nav-foot a{color:var(--cyan);text-decoration:none}
+@media(max-width:768px){.nav-overlay{grid-template-columns:1fr}.nav-deco{display:none}.nav-panel{transform:translateY(-100%);transition:transform .5s var(--ease)}.nav-overlay.is-open .nav-panel{transform:translateY(0)}}
+
+/* SECTIONS */
+.section{padding:clamp(5rem,12vw,10rem) clamp(1.5rem,5vw,4rem);min-height:100vh;display:flex;flex-direction:column;justify-content:center}
+.section--alt{background:var(--bg2)}
+.sec-label{font-family:var(--fm);font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);margin-bottom:1rem;display:flex;align-items:center;gap:.75rem}
+.sec-label::before{content:'';display:block;width:36px;height:1px;background:var(--cyan)}
+.sec-title{font-family:var(--fh);font-weight:800;font-size:clamp(2.2rem,6vw,5rem);line-height:1.05;letter-spacing:-.02em;margin-bottom:1.5rem}
+.sec-sub{color:var(--muted);font-size:1rem;line-height:1.9;max-width:560px}
+
+/* HERO */
+#hero{min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px clamp(1.5rem,5vw,4rem) clamp(3rem,6vw,5rem);position:relative;overflow:hidden}
+.hero-tag{font-family:var(--fm);font-size:.68rem;letter-spacing:.2em;color:var(--cyan);margin-bottom:1.5rem;display:flex;align-items:center;gap:.75rem}
+.hero-tag::before{content:'';width:36px;height:1px;background:var(--cyan);display:block}
+.hero-title{font-family:var(--fh);font-weight:800;font-size:clamp(3.5rem,10vw,9rem);line-height:.95;letter-spacing:-.03em;margin-bottom:2rem}
+.hero-title em{font-style:normal;-webkit-text-stroke:1.5px rgba(255,255,255,.25);color:transparent}
+.hero-sub{max-width:480px;color:var(--muted);font-size:1.05rem;line-height:1.85;margin-bottom:3rem}
+.btn-primary{display:inline-flex;align-items:center;gap:.6rem;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--bg);background:var(--cyan);padding:.9em 2em;text-decoration:none;transition:background .3s,transform .3s;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}
+.btn-primary:hover{background:#fff;transform:translateY(-2px)}
+.hero-scroll{position:absolute;bottom:2rem;right:clamp(1.5rem,5vw,4rem);writing-mode:vertical-rl;font-family:var(--fm);font-size:.6rem;letter-spacing:.15em;color:var(--muted);display:flex;align-items:center;gap:.5rem}
+.hero-scroll::after{content:'';width:1px;height:60px;background:linear-gradient(var(--muted),transparent);animation:scrolll 2s ease infinite}
+@keyframes scrolll{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+/* REVEAL */
+.rv{opacity:0;transform:translateY(28px);transition:opacity .7s,transform .7s var(--ease)}
+.rv.visible{opacity:1;transform:none}
+.rv-d1{transition-delay:.1s}.rv-d2{transition-delay:.2s}.rv-d3{transition-delay:.3s}
+
+/* ABOUT */
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;max-width:1100px}
+@media(max-width:900px){.about-grid{grid-template-columns:1fr}}
+.about-avatar{position:relative;width:280px;max-width:100%}
+.avatar-ring{width:100%;aspect-ratio:1;border-radius:50%;background:conic-gradient(from 0deg,var(--cyan),var(--purple),var(--blue),var(--cyan));padding:3px;animation:spinRing 8s linear infinite}
+@keyframes spinRing{to{transform:rotate(360deg)}}
+.avatar-inner{width:100%;height:100%;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-weight:800;font-size:5rem;color:var(--cyan)}
+.about-stats{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:2rem}
+.stat-card{padding:1.25rem;background:var(--bg3);border:1px solid var(--border);position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--purple))}
+.stat-num{font-family:var(--fh);font-weight:800;font-size:2rem;color:var(--cyan);line-height:1}
+.stat-label{font-size:.75rem;color:var(--muted);margin-top:.3rem;font-family:var(--fm);letter-spacing:.08em}
+.about-text p{color:var(--muted);line-height:1.9;margin-bottom:1.25rem}
+.about-text strong{color:var(--text);font-weight:500}
+.skill-tags{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.5rem}
+.skill-tag{font-family:var(--fm);font-size:.65rem;letter-spacing:.1em;padding:.35em .9em;border:1px solid rgba(0,255,204,.2);color:var(--cyan);background:rgba(0,255,204,.04);transition:background .3s,border-color .3s}
+.skill-tag:hover{background:rgba(0,255,204,.1);border-color:rgba(0,255,204,.5)}
+
+/* TERMINAL */
+.iterm{background:#000;border:1px solid rgba(0,255,204,.2);border-top:2px solid var(--cyan);max-width:700px;overflow:hidden}
+.iterm-bar{display:flex;align-items:center;gap:.5rem;padding:.6rem 1rem;background:#090909;border-bottom:1px solid rgba(255,255,255,.05)}
+.iterm-dot{width:10px;height:10px;border-radius:50%}
+.iterm-dot:nth-child(1){background:#ef4444}.iterm-dot:nth-child(2){background:#f59e0b}.iterm-dot:nth-child(3){background:#22c55e}
+.iterm-title{font-family:var(--fm);font-size:.65rem;color:var(--muted);letter-spacing:.1em;margin-left:.5rem}
+.iterm-body{padding:1.25rem 1.5rem;font-family:var(--fm);font-size:.75rem;line-height:1.8;min-height:200px;max-height:360px;overflow-y:auto}
+.iterm-body::-webkit-scrollbar{width:3px}
+.iterm-body::-webkit-scrollbar-thumb{background:var(--cyan)}
+.iterm-input-row{display:flex;align-items:center;gap:.5rem;border-top:1px solid rgba(0,255,204,.1);padding:.75rem 1.5rem;background:#020202}
+.iterm-prompt{font-family:var(--fm);font-size:.75rem;color:var(--cyan);flex-shrink:0}
+.iterm-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:var(--fm);font-size:.75rem;caret-color:var(--cyan)}
+.t-line{margin-top:.3rem;line-height:1.7}
+.t-prompt{color:var(--cyan)}.t-comment{color:#3a3a5a}.t-ok{color:#00ffcc}.t-warn{color:#f59e0b}.t-err{color:#ef4444}
+.t-cursor{display:inline-block;width:8px;height:.9em;background:var(--cyan);animation:blink 1s step-end infinite;vertical-align:middle;margin-left:2px}
+@keyframes blink{50%{opacity:0}}
+
+/* SERVICES */
+.services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--border);max-width:1200px}
+.service-card{background:var(--bg2);padding:2rem;position:relative;overflow:hidden;transition:background .3s}
+.service-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--cyan),var(--purple));transform:scaleX(0);transform-origin:left;transition:transform .4s var(--ease)}
+.service-card:hover{background:var(--bg3)}.service-card:hover::before{transform:scaleX(1)}
+.service-icon{font-size:1.8rem;margin-bottom:1rem}
+.service-title{font-family:var(--fh);font-weight:700;font-size:1rem;margin-bottom:.75rem;color:var(--text)}
+.service-desc{font-size:.85rem;color:var(--muted);line-height:1.8}
+.service-price{margin-top:1rem;font-family:var(--fm);font-size:.65rem;letter-spacing:.1em;color:var(--cyan)}
+
+/* PROJECTS */
+.projects-list{display:flex;flex-direction:column;gap:1px;background:var(--border);max-width:1100px}
+.project-item{background:var(--bg2);display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:2rem;padding:2rem;cursor:none;transition:background .3s;position:relative;overflow:hidden}
+.project-item::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(var(--cyan),var(--purple));transform:scaleY(0);transition:transform .4s var(--ease)}
+.project-item:hover{background:var(--bg3)}.project-item:hover::after{transform:scaleY(1)}
+.project-num{font-family:var(--fm);font-size:.65rem;color:var(--muted);width:2.5rem;flex-shrink:0}
+.project-info h3{font-family:var(--fh);font-weight:700;font-size:1.2rem;margin-bottom:.4rem}
+.project-info p{font-size:.85rem;color:var(--muted);line-height:1.7;max-width:600px}
+.project-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.75rem}
+.ptag{font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;padding:.2em .7em;border:1px solid var(--border);color:var(--muted)}
+.project-arrow{font-size:1.5rem;color:var(--cyan);flex-shrink:0;transition:transform .3s}
+.project-item:hover .project-arrow{transform:translateX(4px)}
+@media(max-width:600px){.project-item{grid-template-columns:1fr;gap:1rem}.project-num,.project-arrow{display:none}}
+
+/* PORTFOLIO */
+.portfolio-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem;max-width:1200px}
+.portfolio-card{background:var(--bg2);border:1px solid var(--border);padding:1.75rem;position:relative;overflow:hidden;transition:border-color .3s,transform .3s}
+.portfolio-card:hover{border-color:rgba(0,255,204,.3);transform:translateY(-4px)}
+.pc-icon{font-size:2rem;margin-bottom:1rem}
+.pc-title{font-family:var(--fh);font-weight:700;font-size:1rem;margin-bottom:.6rem}
+.pc-desc{font-size:.82rem;color:var(--muted);line-height:1.8}
+.pc-badge{display:inline-block;margin-top:1rem;font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;padding:.3em .8em;background:rgba(0,255,204,.08);color:var(--cyan);border:1px solid rgba(0,255,204,.15)}
+
+/* CHATBOT */
+.chat-wrapper{max-width:800px;background:var(--bg2);border:1px solid rgba(0,255,204,.15);overflow:hidden}
+.chat-header{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);background:var(--bg3)}
+.chat-header-info{display:flex;align-items:center;gap:.75rem}
+.chat-status-dot{width:8px;height:8px;background:var(--cyan);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,255,204,.4)}50%{box-shadow:0 0 0 6px rgba(0,255,204,0)}}
+.chat-header-title{font-family:var(--fh);font-weight:700;font-size:.9rem}
+.chat-header-sub{font-family:var(--fm);font-size:.6rem;color:var(--muted);letter-spacing:.08em}
+.chat-model-badge{font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;padding:.3em .8em;border:1px solid rgba(0,255,204,.2);color:var(--cyan)}
+.chat-messages{height:420px;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1rem}
+.msg{display:flex;gap:.75rem;animation:fadeUp .25s ease-out both}
+.msg-user{flex-direction:row-reverse}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.msg-avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-weight:800;font-size:.7rem}
+.msg-avatar.ai{background:linear-gradient(135deg,var(--cyan),var(--purple));color:var(--bg)}
+.msg-avatar.user{background:rgba(255,255,255,.08);color:var(--text);border:1px solid var(--border)}
+.msg-bubble{max-width:75%;padding:.75rem 1rem;font-size:.85rem;line-height:1.75}
+.msg-bubble.ai{background:var(--bg3);border:1px solid var(--border);border-radius:0 12px 12px 12px}
+.msg-bubble.user{background:rgba(0,255,204,.1);border:1px solid rgba(0,255,204,.2);border-radius:12px 0 12px 12px}
+.typing-dots{display:inline-flex;gap:3px;align-items:center;padding:.5rem 0}
+.typing-dot{width:5px;height:5px;background:var(--muted);border-radius:50%;animation:tdot 1.2s infinite}
+.typing-dot:nth-child(2){animation-delay:.15s}.typing-dot:nth-child(3){animation-delay:.3s}
+@keyframes tdot{0%,80%,100%{transform:scale(1);opacity:.4}40%{transform:scale(1.3);opacity:1}}
+.chat-input-area{display:flex;gap:.75rem;padding:1.25rem 1.5rem;border-top:1px solid var(--border);background:var(--bg3)}
+.chat-input{flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:var(--fb);font-size:14px;padding:.75rem 1rem;outline:none;resize:none;transition:border-color .3s}
+.chat-input::placeholder{color:var(--muted)}
+.chat-input:focus{border-color:rgba(0,255,204,.4)}
+.chat-send{background:var(--cyan);color:var(--bg);border:none;padding:.75rem 1.25rem;font-family:var(--fm);font-size:.7rem;letter-spacing:.1em;cursor:none;transition:background .3s;flex-shrink:0;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))}
+.chat-send:hover{background:#fff}
+.chat-send:disabled{opacity:.5}
+.chips{display:flex;flex-wrap:wrap;gap:.5rem;padding:.75rem 1.5rem 0;border-top:1px solid var(--border)}
+.chip{font-family:var(--fm);font-size:.62rem;letter-spacing:.06em;padding:.35em .9em;background:transparent;border:1px solid var(--border);color:var(--muted);cursor:none;transition:border-color .3s,color .3s}
+.chip:hover{border-color:rgba(0,255,204,.3);color:var(--cyan)}
+
+/* FAQ */
+.faq-list{max-width:800px;display:flex;flex-direction:column;gap:.5rem}
+.faq-item{border:1px solid var(--border);overflow:hidden;transition:border-color .3s}
+.faq-item.open{border-color:rgba(0,255,204,.25)}
+.faq-q{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;cursor:none;font-family:var(--fh);font-weight:700;font-size:.95rem;transition:color .3s;gap:1rem}
+.faq-q:hover{color:var(--cyan)}
+.faq-arrow{font-family:var(--fm);font-size:1rem;color:var(--cyan);flex-shrink:0;transition:transform .3s;line-height:1}
+.faq-item.open .faq-arrow{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .4s var(--ease),padding .3s}
+.faq-item.open .faq-a{max-height:300px;padding:0 1.5rem 1.25rem}
+.faq-a p{font-size:.88rem;color:var(--muted);line-height:1.9}
+
+/* LINKS */
+.links-page{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px clamp(1.5rem,5vw,4rem) 5rem}
+.links-av{width:80px;height:80px;border-radius:50%;background:conic-gradient(from 0deg,var(--cyan),var(--purple),var(--blue),var(--cyan));padding:3px;animation:spinRing 5s linear infinite;margin-bottom:1.25rem}
+.links-av-inner{width:100%;height:100%;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-weight:800;font-size:1.5rem;color:var(--cyan)}
+.links-name{font-family:var(--fh);font-weight:800;font-size:1.6rem;letter-spacing:.05em;margin-bottom:.4rem}
+.links-bio{font-size:.85rem;color:var(--muted);margin-bottom:2.5rem;max-width:300px}
+.links-cards{display:flex;flex-direction:column;gap:.75rem;width:100%;max-width:460px}
+.link-card{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;background:var(--bg2);border:1px solid var(--border);text-decoration:none;color:var(--text);font-family:var(--fh);font-weight:700;font-size:.88rem;letter-spacing:.05em;transition:border-color .3s,background .3s,transform .3s;position:relative;overflow:hidden}
+.link-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--cyan);transform:scaleY(0);transition:transform .3s}
+.link-card:hover{border-color:rgba(0,255,204,.25);background:var(--bg3);transform:translateX(4px)}
+.link-card:hover::before{transform:scaleY(1)}
+.link-card-arr{font-family:var(--fm);font-size:.7rem;color:var(--cyan);opacity:0;transform:translateX(-6px);transition:opacity .3s,transform .3s}
+.link-card:hover .link-card-arr{opacity:1;transform:none}
+
+/* CONTACT FORM */
+.contact-form{max-width:600px;display:flex;flex-direction:column;gap:1rem;margin-top:2rem}
+.form-group{display:flex;flex-direction:column;gap:.4rem}
+.form-label{font-family:var(--fm);font-size:.65rem;letter-spacing:.12em;color:var(--cyan)}
+.form-input,.form-textarea{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--fb);font-size:.9rem;padding:.85rem 1.1rem;outline:none;transition:border-color .3s;width:100%}
+.form-input:focus,.form-textarea:focus{border-color:rgba(0,255,204,.4)}
+.form-textarea{resize:vertical;min-height:120px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:500px){.form-row{grid-template-columns:1fr}}
+.form-error{color:#ef4444;font-family:var(--fm);font-size:.65rem;margin-top:.2rem;display:none}
+.form-group.has-error .form-error{display:block}
+.form-group.has-error .form-input,.form-group.has-error .form-textarea{border-color:#ef4444}
+.form-success{display:none;background:rgba(0,255,204,.08);border:1px solid rgba(0,255,204,.25);color:var(--cyan);padding:1rem 1.25rem;font-family:var(--fm);font-size:.75rem;margin-top:1rem}
+.form-success.show{display:block}
+.form-blocked{display:none;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#ef4444;padding:1rem 1.25rem;font-family:var(--fm);font-size:.75rem;margin-top:1rem}
+.form-blocked.show{display:block}
+.hp-field{position:absolute;left:-9999px;opacity:0;height:0;width:0;overflow:hidden}
+.captcha-box{display:flex;align-items:center;gap:1rem;padding:1rem;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:border-color .3s;user-select:none}
+.captcha-box:hover{border-color:rgba(0,255,204,.3)}
+.captcha-check{width:22px;height:22px;border:2px solid var(--muted);border-radius:3px;display:flex;align-items:center;justify-content:center;transition:all .3s;flex-shrink:0}
+.captcha-box.verified .captcha-check{background:var(--cyan);border-color:var(--cyan)}
+.captcha-box.verified .captcha-check::after{content:'✓';color:var(--bg);font-size:.75rem;font-weight:700}
+.captcha-label{font-family:var(--fm);font-size:.7rem;color:var(--muted);letter-spacing:.06em}
+.captcha-box.verified .captcha-label{color:var(--cyan)}
+
+/* COOKIE BANNER */
+.cookie-banner{position:fixed;bottom:0;left:0;right:0;z-index:8000;background:rgba(10,10,15,.97);border-top:1px solid var(--border);backdrop-filter:blur(20px);padding:1.5rem clamp(1.5rem,5vw,4rem);display:flex;align-items:center;justify-content:space-between;gap:2rem;flex-wrap:wrap;transform:translateY(100%);transition:transform .5s var(--ease)}
+.cookie-banner.show{transform:translateY(0)}
+.cookie-text{font-size:.8rem;color:var(--muted);max-width:700px;line-height:1.7}
+.cookie-text a{color:var(--cyan);text-decoration:none}
+.cookie-btns{display:flex;gap:.75rem;flex-shrink:0}
+.cookie-btn{font-family:var(--fm);font-size:.65rem;letter-spacing:.1em;padding:.7em 1.4em;border:none;cursor:pointer;transition:background .3s}
+.cookie-btn.accept{background:var(--cyan);color:var(--bg)}
+.cookie-btn.accept:hover{background:#fff}
+.cookie-btn.decline{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.cookie-btn.decline:hover{border-color:var(--muted);color:var(--text)}
+
+/* FOOTER */
+.site-footer{border-top:1px solid var(--border);padding:2rem clamp(1.5rem,5vw,4rem);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;font-family:var(--fm);font-size:.68rem;color:var(--muted)}
+.site-footer a{color:var(--cyan);text-decoration:none}
+</style>
+</head>
+<body>
+
+<div id="cur-dot"></div>
+<div id="cur-ring"></div>
+<canvas id="bg-canvas"></canvas>
+<div class="aurora"></div>
+
+<!-- ══ COOKIE BANNER ══ -->
+<div class="cookie-banner" id="cookieBanner" role="dialog">
+  <p class="cookie-text">
+    🍪 Questo sito utilizza cookie tecnici e raccoglie informazioni sulla visita (IP, browser, pagine visitate) per scopi di sicurezza e analisi, come previsto dalla nostra <a href="#privacy">Privacy Policy</a>. Accettando consenti il trattamento ai sensi del <strong style="color:var(--text)">GDPR (Reg. UE 2016/679)</strong>.
+  </p>
+  <div class="cookie-btns">
+    <button class="cookie-btn decline" onclick="setCookieConsent(false)">Solo necessari</button>
+    <button class="cookie-btn accept" onclick="setCookieConsent(true)">Accetta tutto</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="site-header" id="siteHeader">
+  <a href="#hero" class="site-logo">KIRI<span>L</span></a>
+  <button class="hamburger" id="menuToggle" aria-label="Menu" aria-expanded="false">
+    <span class="hl"></span><span class="hl"></span><span class="hl"></span>
+  </button>
+</header>
+
+<!-- NAV -->
+<nav class="nav-overlay" id="navOverlay">
+  <div class="nav-panel">
+    <ul class="nav-list">
+      <li><a href="#chi-sono">Chi sono</a></li>
+      <li><a href="#servizi">Servizi</a></li>
+      <li><a href="#progetti">Progetti</a></li>
+      <li><a href="#portfolio">Portfolio</a></li>
+      <li><a href="#katezoora">Katezoora AI</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="#links">Links</a></li>
+      <li><a href="#contatti">Contatti</a></li>
+      <li><a href="#privacy">Privacy Policy</a></li>
+    </ul>
+    <div class="nav-foot">&copy; 2026 KIRIL — <a href="#privacy">Privacy</a></div>
+  </div>
+  <div class="nav-deco"></div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <p class="hero-tag rv">Kiril Buzylo · Developer & AI Builder</p>
+  <h1 class="hero-title rv rv-d1">Code.<br>Build.<br><em>Innovate.</em></h1>
+  <p class="hero-sub rv rv-d2">17 anni. Sviluppatore full-stack, creatore di AI, costruttore di futuro. Da Katezoora AI al tuo prossimo progetto digitale.</p>
+  <a href="#chi-sono" class="btn-primary rv rv-d3">Scopri chi sono →</a>
+  <div class="hero-scroll">SCROLL</div>
+</section>
+
+<!-- CHI SONO -->
+<section class="section section--alt" id="chi-sono">
+  <p class="sec-label rv">Chi sono</p>
+  <div class="about-grid">
+    <div class="rv rv-d1">
+      <div class="about-avatar">
+        <div class="avatar-ring"><div class="avatar-inner">KB</div></div>
+      </div>
+      <div class="about-stats">
+        <div class="stat-card"><div class="stat-num">17</div><div class="stat-label">ANNI</div></div>
+        <div class="stat-card"><div class="stat-num">3+</div><div class="stat-label">ANNI DI CODE</div></div>
+        <div class="stat-card"><div class="stat-num">∞</div><div class="stat-label">CURIOSITÀ</div></div>
+        <div class="stat-card"><div class="stat-num">AI</div><div class="stat-label">OBSESSED</div></div>
+      </div>
+    </div>
+    <div class="rv rv-d2">
+      <h2 class="sec-title">Piacere,<br>sono <span style="color:var(--cyan)">Kiril.</span></h2>
+      <div class="about-text">
+        <p>Mi chiamo <strong>Kiril Buzylo</strong>, ho 17 anni e vivo circondato da terminali aperti, idee folli e caffè freddo. La programmazione non è solo il mio hobby — è il linguaggio con cui penso il mondo.</p>
+        <p>Tutto è iniziato da piccolo, smontando videogiochi con Cheat Engine. Da lì al codice il passo è stato naturale: Python, JavaScript, HTML/CSS, e poi il grande salto nell'<strong>Intelligenza Artificiale</strong>.</p>
+        <p>Ho costruito <strong>Katezoora AI</strong>, un <strong>browser custom</strong> Electron e una <strong>VPN proprietaria</strong>. Non mi fermo a guardare: costruisco.</p>
+      </div>
+      <div class="skill-tags">
+        <span class="skill-tag">Python</span><span class="skill-tag">JavaScript</span><span class="skill-tag">Node.js</span>
+        <span class="skill-tag">HTML/CSS</span><span class="skill-tag">AI / LLM</span><span class="skill-tag">Electron</span>
+        <span class="skill-tag">WordPress</span><span class="skill-tag">Linux</span><span class="skill-tag">API REST</span>
+        <span class="skill-tag">UI/UX Design</span><span class="skill-tag">Networking</span><span class="skill-tag">PHP</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TERMINAL -->
+<section class="section" id="terminal-sec" style="min-height:auto;padding-top:0">
+  <div class="rv" style="max-width:700px">
+    <p class="sec-label">The AI Layer</p>
+    <h2 class="sec-title" style="font-size:clamp(2rem,5vw,3.5rem);margin-bottom:.75rem">Katezoora<br><span style="color:var(--cyan)">Terminal.</span></h2>
+    <p class="sec-sub" style="margin-bottom:2rem">Digita <code style="color:var(--cyan);font-family:var(--fm)">help</code> per iniziare.</p>
+    <div class="iterm" id="iterm">
+      <div class="iterm-bar">
+        <div class="iterm-dot"></div><div class="iterm-dot"></div><div class="iterm-dot"></div>
+        <span class="iterm-title">katezoora-terminal — v2.0</span>
+      </div>
+      <div class="iterm-body" id="iterm-body">
+        <div class="t-line"><span class="t-ok">✓</span> Katezoora OS v2.0 — avviato</div>
+        <div class="t-line"><span class="t-comment">// Benvenuto nel sistema di Kiril Buzylo</span></div>
+      </div>
+      <div class="iterm-input-row">
+        <span class="iterm-prompt">kiril@katezoora:~$</span>
+        <input class="iterm-input" id="iterm-input" type="text" placeholder="digita un comando…" autocomplete="off" maxlength="80">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVIZI -->
+<section class="section section--alt" id="servizi">
+  <p class="sec-label rv">Servizi</p>
+  <h2 class="sec-title rv">Cosa posso<br>fare <span style="color:var(--cyan)">per te.</span></h2>
+  <div class="services-grid rv rv-d1">
+    <div class="service-card"><div class="service-icon">🌐</div><div class="service-title">Sviluppo Web Full-Stack</div><div class="service-desc">Siti web responsive, landing page, WordPress personalizzati, dashboard.</div><div class="service-price">HTML · CSS · JS · PHP · WordPress</div></div>
+    <div class="service-card"><div class="service-icon">🤖</div><div class="service-title">Chatbot & AI Integration</div><div class="service-desc">Integrazione GPT, Claude, Gemini in app web, Telegram bot, sistemi custom.</div><div class="service-price">OpenAI · Anthropic · OpenRouter</div></div>
+    <div class="service-card"><div class="service-icon">⚡</div><div class="service-title">Automazioni & Scripting</div><div class="service-desc">Automazione workflow, scraping, bot Telegram/Discord, script Python.</div><div class="service-price">Python · Node.js · Selenium · Puppeteer</div></div>
+    <div class="service-card"><div class="service-icon">🎨</div><div class="service-title">UI/UX Design</div><div class="service-desc">Interfacce dark mode, design system moderni, animazioni CSS avanzate.</div><div class="service-price">Figma · CSS · Tailwind · Framer</div></div>
+    <div class="service-card"><div class="service-icon">🔒</div><div class="service-title">Sicurezza & Networking</div><div class="service-desc">VPN, sicurezza web, hardening Linux, consulenza privacy digitale.</div><div class="service-price">Linux · VPN · Nginx · SSL/TLS</div></div>
+    <div class="service-card"><div class="service-icon">📱</div><div class="service-title">App Desktop Electron</div><div class="service-desc">Applicazioni desktop cross-platform con Electron.js.</div><div class="service-price">Electron · Node.js · Chromium</div></div>
+    <div class="service-card"><div class="service-icon">🗄️</div><div class="service-title">Backend & API REST</div><div class="service-desc">Server Node.js/Express, API REST, database SQL/NoSQL, JWT.</div><div class="service-price">Node.js · Express · MongoDB · MySQL</div></div>
+    <div class="service-card"><div class="service-icon">📊</div><div class="service-title">Consulenza Informatica</div><div class="service-desc">Consulenza tecnica, code review, architettura software, AI strategy.</div><div class="service-price">Consulenza · Code Review · Mentoring</div></div>
+    <div class="service-card"><div class="service-icon">🚀</div><div class="service-title">Deploy & DevOps</div><div class="service-desc">Deploy su VPS Linux, Nginx, SSL, CI/CD, monitoraggio uptime.</div><div class="service-price">Linux · Nginx · Certbot · GitHub Actions</div></div>
+  </div>
+</section>
+
+<!-- PROGETTI -->
+<section class="section" id="progetti">
+  <p class="sec-label rv">Progetti</p>
+  <h2 class="sec-title rv">Cosa ho<br><span style="color:var(--cyan)">costruito.</span></h2>
+  <div class="projects-list rv rv-d1">
+    <div class="project-item"><div class="project-num">01</div><div class="project-info"><h3>Katezoora AI</h3><p>Chat AI multi-modello con interfaccia neon, streaming SSE, avatar 3D Three.js. Backend Node.js + OpenRouter.</p><div class="project-tags"><span class="ptag">Node.js</span><span class="ptag">OpenRouter</span><span class="ptag">Three.js</span><span class="ptag">SSE</span></div></div><div class="project-arrow">→</div></div>
+    <div class="project-item"><div class="project-num">02</div><div class="project-info"><h3>Katezoora Browser</h3><p>Browser desktop Electron con blocco ads, AI assistant integrato, privacy mode zero tracciamento.</p><div class="project-tags"><span class="ptag">Electron</span><span class="ptag">Chromium</span><span class="ptag">Privacy</span></div></div><div class="project-arrow">→</div></div>
+    <div class="project-item"><div class="project-num">03</div><div class="project-info"><h3>Katezoora VPN</h3><p>VPN proprietaria WireGuard/OpenVPN, zero log, crittografia E2E, kill switch, multi-location.</p><div class="project-tags"><span class="ptag">WireGuard</span><span class="ptag">OpenVPN</span><span class="ptag">Linux</span></div></div><div class="project-arrow">→</div></div>
+    <div class="project-item"><div class="project-num">04</div><div class="project-info"><h3>Kiril.dev</h3><p>Questo portfolio — dark mode neon, terminal interattivo, chatbot AI, cursore custom. Vanilla JS puro.</p><div class="project-tags"><span class="ptag">HTML</span><span class="ptag">CSS</span><span class="ptag">PHP</span><span class="ptag">Vanilla JS</span></div></div><div class="project-arrow">→</div></div>
+  </div>
+</section>
+
+<!-- PORTFOLIO -->
+<section class="section section--alt" id="portfolio">
+  <p class="sec-label rv">Portfolio</p>
+  <h2 class="sec-title rv">Quello che<br><span style="color:var(--cyan)">so fare.</span></h2>
+  <div class="portfolio-grid rv rv-d1">
+    <div class="portfolio-card"><div class="pc-icon">💬</div><div class="pc-title">Chatbot AI Custom</div><div class="pc-desc">Chatbot con memoria, RAG, su siti web, Telegram, Discord.</div><span class="pc-badge">DISPONIBILE</span></div>
+    <div class="portfolio-card"><div class="pc-icon">🌐</div><div class="pc-title">Siti Web Premium</div><div class="pc-desc">Landing page, portfolio, blog, e-commerce. Dark/light mode, animazioni.</div><span class="pc-badge">DISPONIBILE</span></div>
+    <div class="portfolio-card"><div class="pc-icon">🤖</div><div class="pc-title">Automazioni AI</div><div class="pc-desc">Pipeline AI, contenuti automatici, classificazione dati, workflow n8n/Make.</div><span class="pc-badge">DISPONIBILE</span></div>
+    <div class="portfolio-card"><div class="pc-icon">📊</div><div class="pc-title">Dashboard & Data Viz</div><div class="pc-desc">Dashboard real-time, monitoring, admin panel con autenticazione.</div><span class="pc-badge">DISPONIBILE</span></div>
+    <div class="portfolio-card"><div class="pc-icon">🔌</div><div class="pc-title">Integrazioni API</div><div class="pc-desc">Stripe, Notion, Airtable, CRM, social, webhook custom.</div><span class="pc-badge">DISPONIBILE</span></div>
+    <div class="portfolio-card"><div class="pc-icon">🎮</div><div class="pc-title">Tool & App Desktop</div><div class="pc-desc">App cross-platform: produttività, browser, launcher, utility Electron.</div><span class="pc-badge">DISPONIBILE</span></div>
+    <div class="portfolio-card"><div class="pc-icon">🔐</div><div class="pc-title">Sistemi Autenticazione</div><div class="pc-desc">JWT, OAuth Google/GitHub, 2FA, rate limiting. GDPR-compliant.</div><span class="pc-badge">DISPONIBILE</span></div>
+    <div class="portfolio-card"><div class="pc-icon">📱</div><div class="pc-title">Consulenze Tecniche</div><div class="pc-desc">Analisi stack, code review, architettura, scelta AI per il tuo business.</div><span class="pc-badge">DISPONIBILE</span></div>
+    <div class="portfolio-card"><div class="pc-icon">🧠</div><div class="pc-title">AI Agent & Workflow</div><div class="pc-desc">Agent autonomi: ricerca web, report, analisi documenti, gestione email.</div><span class="pc-badge">IN SVILUPPO</span></div>
+  </div>
+</section>
+
+<!-- KATEZOORA CHATBOT -->
+<section class="section" id="katezoora">
+  <p class="sec-label rv">Katezoora AI</p>
+  <h2 class="sec-title rv">Parla con<br><span style="color:var(--cyan)">l'AI.</span></h2>
+  <p class="sec-sub rv rv-d1" style="margin-bottom:2.5rem">Demo integrata — versione completa su <span style="color:var(--cyan)">katezoora.app</span></p>
+  <div class="chat-wrapper rv rv-d2">
+    <div class="chips">
+      <button class="chip" onclick="chipSend(this)">Cos'è Katezoora AI?</button>
+      <button class="chip" onclick="chipSend(this)">Raccontami di Kiril</button>
+      <button class="chip" onclick="chipSend(this)">Che servizi offri?</button>
+      <button class="chip" onclick="chipSend(this)">Come funziona la VPN?</button>
+      <button class="chip" onclick="chipSend(this)">Prezzi e contatti</button>
+    </div>
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <div class="chat-status-dot"></div>
+        <div><div class="chat-header-title">Katezoora AI</div><div class="chat-header-sub">online · pronto</div></div>
+      </div>
+      <div class="chat-model-badge">katezoora-v1-demo</div>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="msg">
+        <div class="msg-avatar ai">K</div>
+        <div class="msg-bubble ai">Ciao! Sono <strong>Katezoora AI</strong> 👋 — come posso aiutarti?</div>
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <textarea class="chat-input" id="demo-input" rows="1" placeholder="Scrivi un messaggio…" maxlength="500"></textarea>
+      <button class="chat-send" id="demo-send" onclick="sendDemo()">INVIA</button>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section section--alt" id="faq">
+  <p class="sec-label rv">FAQ</p>
+  <h2 class="sec-title rv">Domande<br><span style="color:var(--cyan)">frequenti.</span></h2>
+  <div class="faq-list rv rv-d1">
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Hai 17 anni — posso fidarmi di te?<span class="faq-arrow">+</span></div><div class="faq-a"><p>Assolutamente sì. L'età è un numero: il codice o funziona o non funziona. Ho costruito sistemi AI, un browser, una VPN e questo sito. Giudica il lavoro.</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Quanto costa un progetto?<span class="faq-arrow">+</span></div><div class="faq-a"><p>Landing page da 150€, chatbot AI da 300€, sito completo da 500€+. Preventivo personalizzato gratuito — contattami senza impegno.</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Cos'è Katezoora AI?<span class="faq-arrow">+</span></div><div class="faq-a"><p>Il mio progetto principale: chat AI multi-modello con interfaccia neon, streaming real-time e backend Node.js. Disponibile come SaaS e white-label.</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">In quanto tempo consegni?<span class="faq-arrow">+</span></div><div class="faq-a"><p>Landing page: 3-7 giorni. Sito completo: 2-4 settimane. Chatbot AI: 1-2 settimane. Aggiornamenti continui durante lo sviluppo.</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Lavori da remoto?<span class="faq-arrow">+</span></div><div class="faq-a"><p>100% remoto. Email, Telegram, Discord, chiamata. Nessun problema di fuso orario.</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Offri supporto post-consegna?<span class="faq-arrow">+</span></div><div class="faq-a"><p>Sì, 30 giorni di supporto bug fix inclusi. Poi piano di manutenzione mensile opzionale.</p></div></div>
+  </div>
+</section>
+
+<!-- LINKS -->
+<section class="section links-page" id="links">
+  <div class="links-av rv"><div class="links-av-inner">KB</div></div>
+  <div class="links-name rv rv-d1">Kiril Buzylo</div>
+  <p class="links-bio rv rv-d2">Developer · AI Builder · 17 anni · Italia</p>
+  <div class="links-cards rv rv-d3">
+    <a href="#chi-sono" class="link-card"><span>👤 Chi sono</span><span class="link-card-arr">→</span></a>
+    <a href="#katezoora" class="link-card"><span>🤖 Katezoora AI</span><span class="link-card-arr">→</span></a>
+    <a href="#progetti" class="link-card"><span>🚀 Progetti</span><span class="link-card-arr">→</span></a>
+    <a href="#portfolio" class="link-card"><span>💼 Portfolio</span><span class="link-card-arr">→</span></a>
+    <a href="https://github.com" target="_blank" rel="noopener" class="link-card"><span>🐙 GitHub</span><span class="link-card-arr">→</span></a>
+    <a href="https://linkedin.com" target="_blank" rel="noopener" class="link-card"><span>💼 LinkedIn</span><span class="link-card-arr">→</span></a>
+    <a href="https://t.me/kirilTrasher" target="_blank" rel="noopener" class="link-card"><span>📩 Telegram</span><span class="link-card-arr">→</span></a>
+    <a href="#contatti" class="link-card"><span>✉️ Contattami</span><span class="link-card-arr">→</span></a>
+  </div>
+</section>
+
+<!-- CONTATTI -->
+<section class="section section--alt" id="contatti" style="min-height:auto;padding:5rem clamp(1.5rem,5vw,4rem)">
+  <p class="sec-label rv">Contatti</p>
+  <h2 class="sec-title rv" style="font-size:clamp(2rem,5vw,3.5rem)">Parliamo.<br><span style="color:var(--cyan)">Non mordere.</span></h2>
+  <p class="sec-sub rv rv-d1">Hai un progetto? Scrivimi — rispondo entro 24h.</p>
+  <form class="contact-form rv rv-d2" id="contactForm" novalidate>
+    <div class="hp-field" aria-hidden="true">
+      <input type="text" name="website" id="hp-website" tabindex="-1" autocomplete="off">
+    </div>
+    <div class="form-row">
+      <div class="form-group" id="fg-name">
+        <label class="form-label" for="f-name">NOME *</label>
+        <input class="form-input" type="text" id="f-name" placeholder="Il tuo nome" maxlength="60" autocomplete="name">
+        <span class="form-error">Nome obbligatorio (min 2 caratteri)</span>
+      </div>
+      <div class="form-group" id="fg-email">
+        <label class="form-label" for="f-email">EMAIL *</label>
+        <input class="form-input" type="email" id="f-email" placeholder="tuo@email.com" maxlength="100" autocomplete="email">
+        <span class="form-error">Inserisci un'email valida</span>
+      </div>
+    </div>
+    <div class="form-group" id="fg-subject">
+      <label class="form-label" for="f-subject">OGGETTO *</label>
+      <input class="form-input" type="text" id="f-subject" placeholder="Di cosa hai bisogno?" maxlength="100">
+      <span class="form-error">Oggetto obbligatorio</span>
+    </div>
+    <div class="form-group" id="fg-msg">
+      <label class="form-label" for="f-msg">MESSAGGIO *</label>
+      <textarea class="form-textarea" id="f-msg" placeholder="Descrivi il tuo progetto…" maxlength="2000"></textarea>
+      <span class="form-error">Messaggio obbligatorio (min 10 caratteri)</span>
+    </div>
+    <div class="form-group" id="fg-captcha">
+      <label class="form-label">VERIFICA ANTI-SPAM</label>
+      <div class="captcha-box" id="captchaBox" onclick="verifyCaptcha()" role="checkbox" aria-checked="false" tabindex="0">
+        <div class="captcha-check"></div>
+        <span class="captcha-label" id="captchaLabel">Non sono un robot</span>
+      </div>
+      <span class="form-error" id="captchaErr">Conferma di non essere un robot</span>
+    </div>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap">
+      <button type="submit" class="btn-primary">✉️ Invia Messaggio</button>
+      <a href="https://t.me/kirilTrasher" target="_blank" rel="noopener" class="btn-primary" style="background:var(--purple);color:#fff">📩 Telegram Diretto</a>
+    </div>
+    <div class="form-success" id="formSuccess">✓ Messaggio inviato! Ti rispondo entro 24 ore.</div>
+    <div class="form-blocked" id="formBlocked">⚠ Troppi messaggi in poco tempo. Riprova tra qualche minuto.</div>
+  </form>
+</section>
+
+<!-- PRIVACY -->
+<section class="section" id="privacy" style="min-height:auto;padding:4rem clamp(1.5rem,5vw,4rem)">
+  <p class="sec-label rv">Legale</p>
+  <h2 class="sec-title rv" style="font-size:clamp(1.8rem,4vw,2.8rem)">Privacy Policy<br><span style="color:var(--cyan)">& Cookie.</span></h2>
+  <div class="rv rv-d1" style="max-width:700px;color:var(--muted);font-size:.85rem;line-height:1.9;margin-top:1.5rem">
+    <p><strong style="color:var(--text)">Titolare:</strong> Kiril Buzylo — besenes8@gmail.com</p><br>
+    <p><strong style="color:var(--text)">Dati raccolti:</strong> Previo consenso, IP, browser, OS, pagine visitate, timestamp. Usati per sicurezza e analisi aggregata anonima.</p><br>
+    <p><strong style="color:var(--text)">Base giuridica:</strong> Consenso (art. 6 par. 1 lett. a GDPR) e legittimo interesse per sicurezza (art. 6 par. 1 lett. f GDPR).</p><br>
+    <p><strong style="color:var(--text)">Cookie:</strong> Solo cookie tecnici strettamente necessari. Nessun cookie di profilazione senza consenso.</p><br>
+    <p><strong style="color:var(--text)">Conservazione:</strong> Log di sicurezza conservati max 30 giorni poi eliminati.</p><br>
+    <p><strong style="color:var(--text)">Diritti:</strong> Accesso, rettifica, cancellazione, portabilità dati (artt. 15-22 GDPR). Scrivi a: besenes8@gmail.com</p>
+  </div>
+</section>
+
+<footer class="site-footer" >
+  <span>&copy; 2026 Kiril Buzylo — All rights reserved</span>
+  <span style="color:var(--cyan)">besenes8@gmail.com</span>
+  <span><a href="#privacy">Privacy</a> · <a href="#privacy">Cookie Policy</a></span>
+</footer>
+
+<script>
+(function(){
+'use strict';
+
+/* ════════════════════════════════
+   CONFIGURAZIONE BOT
+   ⚠️ Cambia ANALYTICS_URL con l'URL
+   dove hai caricato analytics.php
+════════════════════════════════ */
+const ANALYTICS_URL = ''; // ← cambia questo
+const BOT_SECRET    = 'KirilKatezoora2026Secret';           // ← deve = SECRET in analytics.php
+
+/* ════════════════════════════════
+   ANTI-DEBUG
+════════════════════════════════ */
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  if(e.key==='F12') { e.preventDefault(); return false; }
+  if(e.ctrlKey && e.shiftKey && ['I','J','C','i','j','c'].includes(e.key)){ e.preventDefault(); return false; }
+  if(e.ctrlKey && (e.key==='u'||e.key==='U')){ e.preventDefault(); return false; }
+});
+console.clear();
+console.log('%cStop!','color:#ef4444;font-size:48px;font-weight:900');
+console.log('%cSistema Katezoora — accesso non autorizzato è illegale (L. 547/93)','color:#00ffcc;font-size:13px;font-family:monospace');
+
+/* ════════════════════════════════
+   COOKIE CONSENT & GDPR
+════════════════════════════════ */
+function setCookie(name,val,days){
+  const d=new Date(); d.setTime(d.getTime()+days*86400000);
+  document.cookie=name+'='+encodeURIComponent(val)+';expires='+d.toUTCString()+';path=/;SameSite=Lax';
+}
+function getCookie(name){
+  const v=document.cookie.split(';').find(c=>c.trim().startsWith(name+'='));
+  return v?decodeURIComponent(v.trim().split('=')[1]):null;
+}
+
+const banner=document.getElementById('cookieBanner');
+
+window.setCookieConsent=function(accepted){
+  setCookie('kiril_consent',accepted?'full':'minimal',365);
+  banner.classList.remove('show');
+  if(accepted) collectVisitorData();
+};
+
+setTimeout(()=>{
+  if(!getCookie('kiril_consent')) banner.classList.add('show');
+  else if(getCookie('kiril_consent')==='full') collectVisitorData();
+},1200);
+
+/* ════════════════════════════════
+   RACCOLTA DATI + INVIO TELEGRAM
+════════════════════════════════ */
+function getOrCreateSession(){
+  let sid=sessionStorage.getItem('k_sid');
+  if(!sid){ sid='k_'+Date.now()+'_'+Math.random().toString(36).substr(2,9); sessionStorage.setItem('k_sid',sid); }
+  return sid;
+}
+
+async function collectVisitorData(){
+  try{
+    const ipR=await fetch('https://api.ipify.org?format=json');
+    const {ip}=await ipR.json();
+    let geo={};
+    try{ const gR=await fetch(`https://ipapi.co/${ip}/json/`); geo=await gR.json(); }catch(_){}
+
+    const visitData={
+      type:       'visit',
+      ip,
+      isp:        geo.org          ||'N/A',
+      country:    geo.country_name ||'N/A',
+      region:     geo.region       ||'N/A',
+      city:       geo.city         ||'N/A',
+      timezone:   geo.timezone     ||'N/A',
+      userAgent:  navigator.userAgent,
+      language:   navigator.language,
+      platform:   navigator.platform,
+      screenRes:  screen.width+'x'+screen.height,
+      colorDepth: screen.colorDepth+'bit',
+      connection: navigator.connection?.effectiveType||'N/A',
+      referrer:   document.referrer||'direct',
+      page:       window.location.href,
+      timestamp:  new Date().toISOString(),
+      sessionId:  getOrCreateSession(),
+    };
+
+    // Salva in localStorage per admin panel
+    try{
+      const logs=JSON.parse(localStorage.getItem('k_visits')||'[]');
+      logs.unshift(visitData); if(logs.length>50) logs.splice(50);
+      localStorage.setItem('k_visits',JSON.stringify(logs));
+    }catch(_){}
+
+    // ✅ Invia al PHP → Telegram
+    await fetch(ANALYTICS_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Secret':BOT_SECRET},
+      body:JSON.stringify(visitData),
+    }).catch(()=>{});
+
+  }catch(_){}
+}
+
+/* ════════════════════════════════
+   ANTI-SPAM FORM
+════════════════════════════════ */
+let captchaVerified=false;
+let captchaStartTime=null;
+let formSubmissions=JSON.parse(sessionStorage.getItem('k_form_sub')||'[]');
+
+// Timer captcha parte quando la sezione contatti è visibile
+new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting&&!captchaStartTime) captchaStartTime=Date.now();});
+},{threshold:.1}).observe(document.getElementById('contatti'));
+
+window.verifyCaptcha=function(){
+  if(!captchaStartTime||Date.now()-captchaStartTime<800) return;
+  captchaVerified=true;
+  document.getElementById('captchaBox').classList.add('verified');
+  document.getElementById('captchaBox').setAttribute('aria-checked','true');
+  document.getElementById('captchaLabel').textContent='Verificato ✓';
+  document.getElementById('captchaErr').style.display='none';
+  document.getElementById('fg-captcha').classList.remove('has-error');
+};
+document.getElementById('captchaBox').addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();verifyCaptcha();}});
+
+function sanitize(s){ return String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function validateEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e); }
+function isSpam(t){ return /https?:\/\/|<[^>]+>|\bviagra\b|\bcasino\b|\bbitcoin\b/gi.test(t); }
+function checkRateLimit(){
+  const now=Date.now(), win=5*60*1000;
+  formSubmissions=formSubmissions.filter(t=>now-t<win);
+  sessionStorage.setItem('k_form_sub',JSON.stringify(formSubmissions));
+  return formSubmissions.length<3;
+}
+function setErr(id,show){ document.getElementById(id).classList.toggle('has-error',show); }
+
+document.getElementById('contactForm').addEventListener('submit',async function(e){
+  e.preventDefault();
+  let valid=true;
+
+  // Honeypot
+  if(document.getElementById('hp-website').value){
+    document.getElementById('formSuccess').classList.add('show'); return;
+  }
+  // Rate limit
+  if(!checkRateLimit()){
+    document.getElementById('formBlocked').classList.add('show');
+    document.getElementById('formSuccess').classList.remove('show'); return;
+  }
+  document.getElementById('formBlocked').classList.remove('show');
+
+  // Captcha
+  if(!captchaVerified){
+    document.getElementById('fg-captcha').classList.add('has-error');
+    document.getElementById('captchaErr').style.display='block';
+    valid=false;
+  }
+
+  const name=document.getElementById('f-name').value.trim();
+  const email=document.getElementById('f-email').value.trim();
+  const subject=document.getElementById('f-subject').value.trim();
+  const msg=document.getElementById('f-msg').value.trim();
+
+  if(name.length<2)        { setErr('fg-name',true);    valid=false; } else setErr('fg-name',false);
+  if(!validateEmail(email)) { setErr('fg-email',true);   valid=false; } else setErr('fg-email',false);
+  if(subject.length<3)     { setErr('fg-subject',true); valid=false; } else setErr('fg-subject',false);
+  if(msg.length<10)        { setErr('fg-msg',true);     valid=false; } else setErr('fg-msg',false);
+  if(isSpam(msg)||isSpam(subject)){ setErr('fg-msg',true); valid=false; }
+
+  if(!valid) return;
+
+  formSubmissions.push(Date.now());
+  sessionStorage.setItem('k_form_sub',JSON.stringify(formSubmissions));
+
+  const contactData={
+    type:'contact',
+    name:sanitize(name), email:sanitize(email),
+    subject:sanitize(subject), message:sanitize(msg),
+    ip:'N/A', timestamp:new Date().toISOString(),
+  };
+
+  // ✅ Invia notifica Telegram
+  await fetch(ANALYTICS_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-Secret':BOT_SECRET},
+    body:JSON.stringify(contactData),
+  }).catch(()=>{});
+
+  // Apri mailto come backup
+  const mailBody=encodeURIComponent(`Nome: ${name}\nEmail: ${email}\n\n${msg}`);
+  window.location.href=`mailto:besenes8@gmail.com?subject=${encodeURIComponent('[kiril.dev] '+subject)}&body=${mailBody}`;
+
+  document.getElementById('formSuccess').classList.add('show');
+  this.reset();
+  captchaVerified=false;
+  document.getElementById('captchaBox').classList.remove('verified');
+  document.getElementById('captchaBox').setAttribute('aria-checked','false');
+  document.getElementById('captchaLabel').textContent='Non sono un robot';
+  captchaStartTime=Date.now();
+});
+
+/* ════════════════════════════════
+   CURSOR
+════════════════════════════════ */
+(function(){
+  const dot=document.getElementById('cur-dot'),ring=document.getElementById('cur-ring');
+  if(!dot||!ring) return;
+  let mx=0,my=0,rx=0,ry=0;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;dot.style.left=mx+'px';dot.style.top=my+'px';});
+  (function a(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(a);})();
+  document.querySelectorAll('a,button,.faq-q,.project-item,.portfolio-card,.service-card,.chip,.captcha-box,.link-card').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{ring.style.width='56px';ring.style.height='56px';ring.style.borderColor='rgba(0,255,204,.6)';});
+    el.addEventListener('mouseleave',()=>{ring.style.width='32px';ring.style.height='32px';ring.style.borderColor='rgba(0,255,204,.35)';});
+  });
+})();
+
+/* ════════════════════════════════
+   BG CANVAS
+════════════════════════════════ */
+(function(){
+  const canvas=document.getElementById('bg-canvas');
+  const ctx=canvas.getContext('2d',{alpha:true});
+  let dpr=Math.min(2,devicePixelRatio||1),W,H,parts;
+  function resize(){
+    W=innerWidth;H=innerHeight;
+    canvas.width=Math.floor(W*dpr);canvas.height=Math.floor(H*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    parts=Array.from({length:Math.floor(W*H/20000)}).map(()=>({
+      x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+0.4,
+      vx:(Math.random()-.5)*.14,vy:(Math.random()-.5)*.14,
+      c:Math.random()<.5?'rgba(0,255,204,.7)':'rgba(168,85,247,.65)'
+    }));
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);ctx.globalCompositeOperation='lighter';
+    for(const p of parts){
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<-20)p.x=W+20;if(p.x>W+20)p.x=-20;
+      if(p.y<-20)p.y=H+20;if(p.y>H+20)p.y=-20;
+      const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*7);
+      g.addColorStop(0,p.c);g.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,p.r*7,0,Math.PI*2);ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',resize,{passive:true});resize();draw();
+})();
+
+/* ════════════════════════════════
+   HEADER / MENU
+════════════════════════════════ */
+window.addEventListener('scroll',()=>{ document.getElementById('siteHeader').classList.toggle('scrolled',scrollY>60); },{passive:true});
+const toggle=document.getElementById('menuToggle'),overlay=document.getElementById('navOverlay');
+let menuOpen=false;
+function openMenu(){menuOpen=true;overlay.classList.add('is-open');document.body.classList.add('menu-open');document.body.style.overflow='hidden';toggle.setAttribute('aria-expanded','true');}
+function closeMenu(){menuOpen=false;overlay.classList.remove('is-open');document.body.classList.remove('menu-open');document.body.style.overflow='';toggle.setAttribute('aria-expanded','false');}
+toggle.addEventListener('click',()=>menuOpen?closeMenu():openMenu());
+document.querySelectorAll('.nav-list a').forEach(a=>a.addEventListener('click',closeMenu));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&menuOpen)closeMenu();});
+
+/* ════════════════════════════════
+   SCROLL REVEAL
+════════════════════════════════ */
+if('IntersectionObserver' in window){
+  const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});},{threshold:.12});
+  document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
+}else{ document.querySelectorAll('.rv').forEach(el=>el.classList.add('visible')); }
+
+/* ════════════════════════════════
+   FAQ
+════════════════════════════════ */
+window.toggleFaq=function(el){
+  const item=el.closest('.faq-item'),was=item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(i=>i.classList.remove('open'));
+  if(!was)item.classList.add('open');
+};
+
+/* ════════════════════════════════
+   TERMINAL
+════════════════════════════════ */
+(function(){
+  const body=document.getElementById('iterm-body'),input=document.getElementById('iterm-input');
+  if(!body||!input)return;
+  const cmds={
+    help:()=>['<span class="t-ok">Comandi:</span>','  <span class="t-prompt">whoami</span> — info su Kiril','  <span class="t-prompt">projects</span> — lista progetti','  <span class="t-prompt">skills</span> — stack tecnologico','  <span class="t-prompt">matrix</span> — 🟢','  <span class="t-prompt">hack</span> — prova 😏','  <span class="t-prompt">clear</span> — pulisci'],
+    whoami:()=>['<span class="t-ok">→ Kiril Buzylo</span>','  Età: 17 | Developer & AI Builder | Italia 🇮🇹'],
+    projects:()=>['<span class="t-ok">→ Progetti:</span>','  [01] Katezoora AI    — <span class="t-ok">LIVE</span>','  [02] Katezoora Browser — <span class="t-warn">BETA</span>','  [03] Katezoora VPN   — <span class="t-warn">WIP</span>'],
+    skills:()=>['<span class="t-ok">→ Stack:</span>','  JS/Node ████████░  Python ███████░  AI/LLM ████████  PHP █████░'],
+    hack:()=>['<span class="t-warn">⚠ Tentativo rilevato. IP tracciato.</span>','<span class="t-comment">// scherzo 😂 — usa "help"</span>'],
+    matrix:()=>{ startMatrix(); return ['<span class="t-ok">Matrix ON. Clicca per uscire.</span>']; },
+    clear:()=>{ body.innerHTML=''; appendPrompt(); return null; },
+  };
+  function appendLine(h){ const d=document.createElement('div');d.className='t-line';d.innerHTML=h;body.appendChild(d);body.scrollTop=body.scrollHeight; }
+  function appendPrompt(){ const d=document.createElement('div');d.className='t-line';d.innerHTML='<span class="t-prompt">kiril@katezoora:~$</span> <span class="t-cursor"></span>';body.appendChild(d);body.scrollTop=body.scrollHeight; }
+  async function runCommand(cmd){
+    const last=body.querySelector('.t-cursor');if(last){last.textContent=cmd;last.classList.remove('t-cursor');}
+    const fn=cmds[cmd.toLowerCase().trim()];
+    if(fn){await new Promise(r=>setTimeout(r,60));const lines=fn();if(!lines)return;for(const l of lines){await new Promise(r=>setTimeout(r,40));appendLine(l);}}
+    else if(!cmd.trim()){}
+    else{appendLine(`<span class="t-err">bash: ${sanitize(cmd)}: comando non trovato. Digita <span class="t-prompt">help</span></span>`);}
+    appendPrompt();
+  }
+  input.addEventListener('keydown',async e=>{if(e.key==='Enter'){e.preventDefault();const v=input.value.slice(0,80);input.value='';await runCommand(v);}});
+  function startMatrix(){
+    const ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;background:#000;z-index:9000;cursor:pointer';
+    const mc=document.createElement('canvas');mc.style.cssText='width:100%;height:100%;display:block';
+    ov.appendChild(mc);document.body.appendChild(ov);
+    const mctx=mc.getContext('2d');mc.width=innerWidth;mc.height=innerHeight;
+    const cols=Math.floor(innerWidth/14),drops=Array(cols).fill(0),chars='アKATEZOORAKIRIL01';
+    const iv=setInterval(()=>{mctx.fillStyle='rgba(0,0,0,0.05)';mctx.fillRect(0,0,mc.width,mc.height);mctx.fillStyle='#00ffcc';mctx.font='12px monospace';drops.forEach((y,i)=>{mctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*14,y*14);drops[i]=y>mc.height/14&&Math.random()>.975?0:y+1;});},50);
+    ov.addEventListener('click',()=>{clearInterval(iv);ov.remove();});
+  }
+  appendPrompt();input.focus();
+})();
+
+/* ════════════════════════════════
+   CHATBOT DEMO
+════════════════════════════════ */
+const demoR={
+  default:['Kiril è un developer straordinario per i suoi 17 anni. Ha costruito questo ecosistema da zero! 🚀','Domanda interessante! Kiril lavora con Node.js, Python, PHP e JS. Specialità: integrazione AI.','Sono Katezoora AI di Kiril. Per la versione completa: katezoora.app 🤖'],
+  katezoora:'Katezoora AI è il progetto principale! 🧠 Chat multi-modello, streaming SSE, Three.js, GPT-4o e Claude 3.5. Node.js + OpenRouter.',
+  kiril:'Kiril Buzylo, 17 anni, developer serio. Ha costruito Katezoora AI, un browser Electron e una VPN. Tutto da solo. 💪',
+  servizi:'Sviluppo web full-stack, chatbot AI custom, automazioni, UI/UX, sicurezza, Electron, API REST, DevOps. Preventivo: besenes8@gmail.com!',
+  vpn:'WireGuard/OpenVPN, pannello web custom, zero log, crittografia E2E, kill switch. In sviluppo — presto disponibile!',
+  prezzi:'Landing page 150€, chatbot AI 300€, sito completo 500€+. Preventivo gratuito → besenes8@gmail.com',
+};
+function getDemoR(msg){
+  const m=msg.toLowerCase();
+  if(m.includes('katezoora')&&!m.includes('kiril'))return demoR.katezoora;
+  if(m.includes('kiril')||m.includes('chi sei'))return demoR.kiril;
+  if(m.includes('servizi')||m.includes('cosa fai'))return demoR.servizi;
+  if(m.includes('vpn'))return demoR.vpn;
+  if(m.includes('prezzi')||m.includes('costo')||m.includes('quanto'))return demoR.prezzi;
+  return demoR.default[Math.floor(Math.random()*3)];
+}
+function addMsg(role,text){
+  const msgs=document.getElementById('chat-messages');
+  const wrap=document.createElement('div');wrap.className='msg'+(role==='user'?' msg-user':'');
+  const av=document.createElement('div');av.className='msg-avatar '+(role==='user'?'user':'ai');av.textContent=role==='user'?'T':'K';
+  const bub=document.createElement('div');bub.className='msg-bubble '+(role==='user'?'user':'ai');bub.innerHTML=text;
+  wrap.appendChild(av);wrap.appendChild(bub);msgs.appendChild(wrap);msgs.scrollTop=msgs.scrollHeight;
+}
+window.sendDemo=async function(){
+  const inp=document.getElementById('demo-input'),btn=document.getElementById('demo-send');
+  const text=inp.value.trim().slice(0,500);if(!text)return;
+  const n=parseInt(sessionStorage.getItem('k_chat')||'0');
+  if(n>=15){addMsg('ai','⚠ Limite demo raggiunto. Vai su katezoora.app!');inp.value='';return;}
+  sessionStorage.setItem('k_chat',n+1);
+  inp.value='';btn.disabled=true;addMsg('user',sanitize(text));
+  const msgs=document.getElementById('chat-messages');
+  const tw=document.createElement('div');tw.className='msg';tw.id='typing-indicator';
+  tw.innerHTML='<div class="msg-avatar ai">K</div><div class="msg-bubble ai"><div class="typing-dots"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div>';
+  msgs.appendChild(tw);msgs.scrollTop=msgs.scrollHeight;
+  await new Promise(r=>setTimeout(r,900+Math.random()*600));
+  document.getElementById('typing-indicator')?.remove();
+  addMsg('ai',getDemoR(text));btn.disabled=false;inp.focus();
+};
+window.chipSend=function(btn){document.getElementById('demo-input').value=btn.textContent;sendDemo();};
+document.getElementById('demo-input')?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendDemo();}});
+document.getElementById('demo-input')?.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';});
+
+})();
+</script>
+</body>
+</html>
