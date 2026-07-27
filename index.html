@@ -53,22 +53,25 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-weight:30
 .menu-open .hl:nth-child(2){opacity:0;width:0}
 .menu-open .hl:nth-child(3){width:26px;transform:translateY(-6.5px) rotate(-45deg);background:var(--cyan)}
 
-/* NAV OVERLAY */
-.nav-overlay{position:fixed;inset:0;z-index:1050;display:grid;grid-template-columns:1fr 1fr;pointer-events:none;visibility:hidden}
-.nav-overlay.is-open{pointer-events:all;visibility:visible}
-.nav-panel{background:var(--bg2);display:flex;flex-direction:column;justify-content:center;padding:clamp(2rem,8vw,6rem);transform:translateX(-100%);transition:transform .6s var(--ease)}
-.nav-deco{background:var(--bg3);position:relative;overflow:hidden;transform:translateX(100%);transition:transform .6s var(--ease) .1s}
-.nav-overlay.is-open .nav-panel,.nav-overlay.is-open .nav-deco{transform:translateX(0)}
-.nav-deco::before{content:'';position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:55px 55px}
-.nav-deco::after{content:'KIRIL';position:absolute;bottom:-.1em;right:-.05em;font-family:var(--fh);font-weight:800;font-size:clamp(5rem,16vw,14rem);line-height:1;color:transparent;-webkit-text-stroke:1px rgba(0,255,204,.07)}
-.nav-list{list-style:none;display:flex;flex-direction:column;gap:.2rem;counter-reset:nc}
-.nav-list li{overflow:hidden}
-.nav-list a{display:inline-flex;align-items:center;gap:.75rem;font-family:var(--fh);font-weight:700;font-size:clamp(1.4rem,3vw,2.5rem);color:var(--muted);text-decoration:none;padding:.2em 0;transition:color .3s,transform .3s var(--ease)}
-.nav-list a::before{content:'0' counter(nc);counter-increment:nc;font-family:var(--fm);font-size:.6rem;color:var(--cyan);opacity:0;transition:opacity .3s;flex-shrink:0}
-.nav-list a:hover{color:var(--text);transform:translateX(10px)}.nav-list a:hover::before{opacity:1}
-.nav-foot{margin-top:auto;padding-top:2rem;font-family:var(--fm);font-size:.7rem;color:var(--muted);letter-spacing:.08em}
-.nav-foot a{color:var(--cyan);text-decoration:none}
-@media(max-width:768px){.nav-overlay{grid-template-columns:1fr}.nav-deco{display:none}.nav-panel{transform:translateY(-100%);transition:transform .5s var(--ease)}.nav-overlay.is-open .nav-panel{transform:translateY(0)}}
+/* ══ MENU-GIOCO (pixel art) ══
+   Il classico menu è sostituito da un piccolo gioco in canvas.
+   Ogni portale porta a una sezione del sito. */
+.game-overlay{position:fixed;inset:0;z-index:1050;background:#05060a;display:none;flex-direction:column;touch-action:none}
+.game-overlay.is-open{display:flex}
+.game-canvas{flex:1;width:100%;height:100%;display:block;image-rendering:pixelated}
+/* barra in alto: titolo + uscita */
+.game-bar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:.75rem clamp(1rem,4vw,2rem);z-index:2;pointer-events:none}
+.game-hint{font-family:var(--fm);font-size:.62rem;letter-spacing:.08em;color:var(--muted);line-height:1.5;max-width:60%}
+.game-hint b{color:var(--cyan);font-weight:700}
+.game-exit{pointer-events:auto;font-family:var(--fm);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text);background:rgba(0,0,0,.4);border:1px solid rgba(0,255,204,.35);padding:.6em 1.2em;cursor:pointer;transition:background .2s,border-color .2s;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))}
+.game-exit:hover{background:rgba(0,255,204,.12);border-color:var(--cyan)}
+/* d-pad touch: mostrato solo su schermi tattili */
+.game-pad{position:absolute;bottom:5vh;left:4vw;z-index:2;display:none;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,52px);gap:6px}
+.game-pad button{background:rgba(0,255,204,.06);border:1px solid rgba(0,255,204,.25);color:var(--cyan);font-size:1.1rem;font-family:var(--fm);border-radius:8px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none}
+.game-pad button:active{background:rgba(0,255,204,.22)}
+.game-pad .pad-up{grid-area:1/2}.game-pad .pad-left{grid-area:2/1}.game-pad .pad-right{grid-area:2/3}.game-pad .pad-down{grid-area:3/2}
+@media(pointer:coarse){.game-overlay.is-open .game-pad{display:grid}}
+@media(prefers-reduced-motion:reduce){.game-hint b{color:var(--cyan)}}
 
 /* SECTIONS */
 .section{padding:clamp(5rem,12vw,10rem) clamp(1.5rem,5vw,4rem);min-height:100vh;display:flex;flex-direction:column;justify-content:center}
@@ -287,35 +290,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-weight:30
 <!-- HEADER -->
 <header class="site-header" id="siteHeader">
   <a href="#hero" class="site-logo">KIRI<span>L</span></a>
-  <button class="hamburger" id="menuToggle" aria-label="Menu" aria-expanded="false">
+  <button class="hamburger" id="menuToggle" aria-label="Apri il menu-gioco" aria-expanded="false">
     <span class="hl"></span><span class="hl"></span><span class="hl"></span>
   </button>
 </header>
 
-<!-- NAV -->
-<nav class="nav-overlay" id="navOverlay">
-  <div class="nav-panel">
-    <ul class="nav-list">
-      <li><a href="#chi-sono">Chi sono</a></li>
-      <li><a href="#servizi">Servizi</a></li>
-      <li><a href="#progetti">Progetti</a></li>
-      <li><a href="#portfolio">Portfolio</a></li>
-      <li><a href="#katezoora">Katezoora AI</a></li>
-      <li><a href="#faq">FAQ</a></li>
-      <li><a href="#links">Links</a></li>
-      <li><a href="#contatti">Contatti</a></li>
-      <li><a href="#privacy">Privacy Policy</a></li>
-    </ul>
-    <div class="nav-foot">&copy; 2026 KIRIL — <a href="#privacy">Privacy</a></div>
-  </div>
-  <div class="nav-deco"></div>
-</nav>
+<!-- Il menu è un mini-gioco: vedi #gameOverlay in fondo alla pagina -->
 
 <!-- HERO -->
 <section id="hero">
   <p class="hero-tag rv">Kiril Buzylo · Developer & AI Builder</p>
   <h1 class="hero-title rv rv-d1">Code.<br>Build.<br><em>Innovate.</em></h1>
-  <p class="hero-sub rv rv-d2">17 anni. Sviluppatore full-stack, creatore di AI, costruttore di futuro. Da Katezoora AI al tuo prossimo progetto digitale.</p>
+  <p class="hero-sub rv rv-d2">17 anni, studente di Informatica all'ENAIP di Varese. Costruisco web e mobile con progetti reali e gia' online — da KateZoora al prossimo.</p>
   <a href="#chi-sono" class="btn-primary rv rv-d3">Scopri chi sono →</a>
   <div class="hero-scroll">SCROLL</div>
 </section>
@@ -330,23 +316,23 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-weight:30
       </div>
       <div class="about-stats">
         <div class="stat-card"><div class="stat-num">17</div><div class="stat-label">ANNI</div></div>
-        <div class="stat-card"><div class="stat-num">3+</div><div class="stat-label">ANNI DI CODE</div></div>
+        <div class="stat-card"><div class="stat-num">2+</div><div class="stat-label">PROGETTI LIVE</div></div>
+        <div class="stat-card"><div class="stat-num">ENAIP</div><div class="stat-label">VARESE</div></div>
         <div class="stat-card"><div class="stat-num">∞</div><div class="stat-label">CURIOSITÀ</div></div>
-        <div class="stat-card"><div class="stat-num">AI</div><div class="stat-label">OBSESSED</div></div>
       </div>
     </div>
     <div class="rv rv-d2">
       <h2 class="sec-title">Piacere,<br>sono <span style="color:var(--cyan)">Kiril.</span></h2>
       <div class="about-text">
-        <p>Mi chiamo <strong>Kiril Buzylo</strong>, ho 17 anni e vivo circondato da terminali aperti, idee folli e caffè freddo. La programmazione non è solo il mio hobby — è il linguaggio con cui penso il mondo.</p>
-        <p>Tutto è iniziato da piccolo, smontando videogiochi con Cheat Engine. Da lì al codice il passo è stato naturale: Python, JavaScript, HTML/CSS, e poi il grande salto nell'<strong>Intelligenza Artificiale</strong>.</p>
-        <p>Ho costruito <strong>Katezoora AI</strong>, un <strong>browser custom</strong> Electron e una <strong>VPN proprietaria</strong>. Non mi fermo a guardare: costruisco.</p>
+        <p>Mi chiamo <strong>Kiril Buzylo</strong>, ho 17 anni e studio Informatica all'<strong>ENAIP di Varese</strong> (terzo anno da settembre 2026). Programmo ogni giorno: per me il codice è il modo più diretto di trasformare un'idea in qualcosa che funziona davvero.</p>
+        <p>Collaboro con <strong>BTP Softel</strong> su progetti web e mobile reali, e porto avanti i miei: <strong>KateZoora</strong>, una chat con AI su cui lavoro da quasi due anni, e <strong>CaraTalk</strong>, una web app di messaggistica usata ogni giorno da utenti veri.</p>
+        <p>Il mio metodo: parto da una base solida e la riprogrammo pezzo per pezzo — struttura, API, database, deploy. Uso GitHub tutti i giorni e faccio debug in profondità finché non torna tutto.</p>
       </div>
       <div class="skill-tags">
-        <span class="skill-tag">Python</span><span class="skill-tag">JavaScript</span><span class="skill-tag">Node.js</span>
-        <span class="skill-tag">HTML/CSS</span><span class="skill-tag">AI / LLM</span><span class="skill-tag">Electron</span>
-        <span class="skill-tag">WordPress</span><span class="skill-tag">Linux</span><span class="skill-tag">API REST</span>
-        <span class="skill-tag">UI/UX Design</span><span class="skill-tag">Networking</span><span class="skill-tag">PHP</span>
+        <span class="skill-tag">TypeScript</span><span class="skill-tag">JavaScript</span><span class="skill-tag">React / Next.js</span>
+        <span class="skill-tag">Kotlin</span><span class="skill-tag">Python</span><span class="skill-tag">PHP</span>
+        <span class="skill-tag">HTML/CSS</span><span class="skill-tag">Firebase</span><span class="skill-tag">WebRTC</span>
+        <span class="skill-tag">API REST</span><span class="skill-tag">Integrazione AI</span><span class="skill-tag">Git / GitHub</span>
       </div>
     </div>
   </div>
@@ -380,15 +366,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-weight:30
   <p class="sec-label rv">Servizi</p>
   <h2 class="sec-title rv">Cosa posso<br>fare <span style="color:var(--cyan)">per te.</span></h2>
   <div class="services-grid rv rv-d1">
-    <div class="service-card"><div class="service-icon">🌐</div><div class="service-title">Sviluppo Web Full-Stack</div><div class="service-desc">Siti web responsive, landing page, WordPress personalizzati, dashboard.</div><div class="service-price">HTML · CSS · JS · PHP · WordPress</div></div>
-    <div class="service-card"><div class="service-icon">🤖</div><div class="service-title">Chatbot & AI Integration</div><div class="service-desc">Integrazione GPT, Claude, Gemini in app web, Telegram bot, sistemi custom.</div><div class="service-price">OpenAI · Anthropic · OpenRouter</div></div>
-    <div class="service-card"><div class="service-icon">⚡</div><div class="service-title">Automazioni & Scripting</div><div class="service-desc">Automazione workflow, scraping, bot Telegram/Discord, script Python.</div><div class="service-price">Python · Node.js · Selenium · Puppeteer</div></div>
-    <div class="service-card"><div class="service-icon">🎨</div><div class="service-title">UI/UX Design</div><div class="service-desc">Interfacce dark mode, design system moderni, animazioni CSS avanzate.</div><div class="service-price">Figma · CSS · Tailwind · Framer</div></div>
-    <div class="service-card"><div class="service-icon">🔒</div><div class="service-title">Sicurezza & Networking</div><div class="service-desc">VPN, sicurezza web, hardening Linux, consulenza privacy digitale.</div><div class="service-price">Linux · VPN · Nginx · SSL/TLS</div></div>
-    <div class="service-card"><div class="service-icon">📱</div><div class="service-title">App Desktop Electron</div><div class="service-desc">Applicazioni desktop cross-platform con Electron.js.</div><div class="service-price">Electron · Node.js · Chromium</div></div>
-    <div class="service-card"><div class="service-icon">🗄️</div><div class="service-title">Backend & API REST</div><div class="service-desc">Server Node.js/Express, API REST, database SQL/NoSQL, JWT.</div><div class="service-price">Node.js · Express · MongoDB · MySQL</div></div>
-    <div class="service-card"><div class="service-icon">📊</div><div class="service-title">Consulenza Informatica</div><div class="service-desc">Consulenza tecnica, code review, architettura software, AI strategy.</div><div class="service-price">Consulenza · Code Review · Mentoring</div></div>
-    <div class="service-card"><div class="service-icon">🚀</div><div class="service-title">Deploy & DevOps</div><div class="service-desc">Deploy su VPS Linux, Nginx, SSL, CI/CD, monitoraggio uptime.</div><div class="service-price">Linux · Nginx · Certbot · GitHub Actions</div></div>
+    <div class="service-card"><div class="service-icon">🌐</div><div class="service-title">Siti Web su Misura</div><div class="service-desc">Siti responsive e multilingua, dal design al codice. Base solida, poi riprogrammata pezzo per pezzo.</div><div class="service-price">HTML · CSS · JS · PHP</div></div>
+    <div class="service-card"><div class="service-icon">⚛️</div><div class="service-title">Web App React / Next.js</div><div class="service-desc">Applicazioni moderne con Next.js e TypeScript, stato con Zustand, UI curata con Tailwind.</div><div class="service-price">Next.js · TypeScript · Tailwind · Zustand</div></div>
+    <div class="service-card"><div class="service-icon">🤖</div><div class="service-title">Integrazione AI</div><div class="service-desc">Chat e funzioni AI dentro app web, con modelli collegati via API (OpenRouter). È il cuore di KateZoora.</div><div class="service-price">OpenRouter · API REST · Streaming</div></div>
+    <div class="service-card"><div class="service-icon">📱</div><div class="service-title">App Android Native</div><div class="service-desc">App Android in Kotlin con architettura MVVM. Ne ho già realizzata una in produzione.</div><div class="service-price">Kotlin · Android · MVVM</div></div>
+    <div class="service-card"><div class="service-icon">📲</div><div class="service-title">PWA & Realtime</div><div class="service-desc">Web app installabili con chiamate WebRTC, messaggi vocali e database realtime — come CaraTalk.</div><div class="service-price">PWA · WebRTC · Firebase</div></div>
+    <div class="service-card"><div class="service-icon">🚀</div><div class="service-title">Deploy & Hosting</div><div class="service-desc">Messa online reale: HTTPS, DNS, port forwarding, GitHub Pages. Hosting da casa o su piattaforma.</div><div class="service-price">HTTPS · DNS · Caddy · GitHub Pages</div></div>
   </div>
 </section>
 
@@ -397,10 +380,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-weight:30
   <p class="sec-label rv">Progetti</p>
   <h2 class="sec-title rv">Cosa ho<br><span style="color:var(--cyan)">costruito.</span></h2>
   <div class="projects-list rv rv-d1">
-    <div class="project-item"><div class="project-num">01</div><div class="project-info"><h3>Katezoora AI</h3><p>Chat AI multi-modello con interfaccia neon, streaming SSE, avatar 3D Three.js. Backend Node.js + OpenRouter.</p><div class="project-tags"><span class="ptag">Node.js</span><span class="ptag">OpenRouter</span><span class="ptag">Three.js</span><span class="ptag">SSE</span></div></div><div class="project-arrow">→</div></div>
-    <div class="project-item"><div class="project-num">02</div><div class="project-info"><h3>Katezoora Browser</h3><p>Browser desktop Electron con blocco ads, AI assistant integrato, privacy mode zero tracciamento.</p><div class="project-tags"><span class="ptag">Electron</span><span class="ptag">Chromium</span><span class="ptag">Privacy</span></div></div><div class="project-arrow">→</div></div>
-    <div class="project-item"><div class="project-num">03</div><div class="project-info"><h3>Katezoora VPN</h3><p>VPN proprietaria WireGuard/OpenVPN, zero log, crittografia E2E, kill switch, multi-location.</p><div class="project-tags"><span class="ptag">WireGuard</span><span class="ptag">OpenVPN</span><span class="ptag">Linux</span></div></div><div class="project-arrow">→</div></div>
-    <div class="project-item"><div class="project-num">04</div><div class="project-info"><h3>Kiril.dev</h3><p>Questo portfolio — dark mode neon, terminal interattivo, chatbot AI, cursore custom. Vanilla JS puro.</p><div class="project-tags"><span class="ptag">HTML</span><span class="ptag">CSS</span><span class="ptag">PHP</span><span class="ptag">Vanilla JS</span></div></div><div class="project-arrow">→</div></div>
+    <div class="project-item"><div class="project-num">01</div><div class="project-info"><h3>KateZoora</h3><p>Il mio progetto principale: una piattaforma di chat con AI su cui lavoro da quasi due anni. Modelli collegati via OpenRouter, stato gestito con Zustand.</p><div class="project-tags"><span class="ptag">Next.js 14</span><span class="ptag">TypeScript</span><span class="ptag">Tailwind</span><span class="ptag">Zustand</span><span class="ptag">OpenRouter</span></div></div><div class="project-arrow">→</div></div>
+    <div class="project-item"><div class="project-num">02</div><div class="project-info"><h3>CaraTalk</h3><p>Web app di messaggistica PWA usata ogni giorno da utenti reali: chiamate WebRTC, messaggi vocali, storie e database realtime su Firebase.</p><div class="project-tags"><span class="ptag">PWA</span><span class="ptag">WebRTC</span><span class="ptag">Firebase</span><span class="ptag">Realtime</span></div></div><div class="project-arrow">→</div></div>
+    <div class="project-item"><div class="project-num">03</div><div class="project-info"><h3>BTP Softel — Sito & App</h3><p>Collaboro con BTP Softel (Vedano Olona): sito aziendale, un'app Android nativa in Kotlin e siti per clienti reali, tra cui un'azienda chimica multilingua IT/EN/DE.</p><div class="project-tags"><span class="ptag">Kotlin</span><span class="ptag">Android</span><span class="ptag">Web</span><span class="ptag">Multilingua</span></div></div><div class="project-arrow">→</div></div>
+    <div class="project-item"><div class="project-num">04</div><div class="project-info"><h3>Questo Portfolio</h3><p>Sito interattivo in vanilla JS: terminal, riconoscimento facciale via webcam e un mini-gioco pixel art. Pubblicato in doppio deploy: hosting da casa (DuckDNS + Caddy + HTTPS) e GitHub Pages.</p><div class="project-tags"><span class="ptag">Vanilla JS</span><span class="ptag">Canvas</span><span class="ptag">DuckDNS</span><span class="ptag">GitHub Pages</span></div></div><div class="project-arrow">→</div></div>
   </div>
 </section>
 
@@ -409,15 +392,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-weight:30
   <p class="sec-label rv">Portfolio</p>
   <h2 class="sec-title rv">Quello che<br><span style="color:var(--cyan)">so fare.</span></h2>
   <div class="portfolio-grid rv rv-d1">
-    <div class="portfolio-card"><div class="pc-icon">💬</div><div class="pc-title">Chatbot AI Custom</div><div class="pc-desc">Chatbot con memoria, RAG, su siti web, Telegram, Discord.</div><span class="pc-badge">DISPONIBILE</span></div>
-    <div class="portfolio-card"><div class="pc-icon">🌐</div><div class="pc-title">Siti Web Premium</div><div class="pc-desc">Landing page, portfolio, blog, e-commerce. Dark/light mode, animazioni.</div><span class="pc-badge">DISPONIBILE</span></div>
-    <div class="portfolio-card"><div class="pc-icon">🤖</div><div class="pc-title">Automazioni AI</div><div class="pc-desc">Pipeline AI, contenuti automatici, classificazione dati, workflow n8n/Make.</div><span class="pc-badge">DISPONIBILE</span></div>
-    <div class="portfolio-card"><div class="pc-icon">📊</div><div class="pc-title">Dashboard & Data Viz</div><div class="pc-desc">Dashboard real-time, monitoring, admin panel con autenticazione.</div><span class="pc-badge">DISPONIBILE</span></div>
-    <div class="portfolio-card"><div class="pc-icon">🔌</div><div class="pc-title">Integrazioni API</div><div class="pc-desc">Stripe, Notion, Airtable, CRM, social, webhook custom.</div><span class="pc-badge">DISPONIBILE</span></div>
-    <div class="portfolio-card"><div class="pc-icon">🎮</div><div class="pc-title">Tool & App Desktop</div><div class="pc-desc">App cross-platform: produttività, browser, launcher, utility Electron.</div><span class="pc-badge">DISPONIBILE</span></div>
-    <div class="portfolio-card"><div class="pc-icon">🔐</div><div class="pc-title">Sistemi Autenticazione</div><div class="pc-desc">JWT, OAuth Google/GitHub, 2FA, rate limiting. GDPR-compliant.</div><span class="pc-badge">DISPONIBILE</span></div>
-    <div class="portfolio-card"><div class="pc-icon">📱</div><div class="pc-title">Consulenze Tecniche</div><div class="pc-desc">Analisi stack, code review, architettura, scelta AI per il tuo business.</div><span class="pc-badge">DISPONIBILE</span></div>
-    <div class="portfolio-card"><div class="pc-icon">🧠</div><div class="pc-title">AI Agent & Workflow</div><div class="pc-desc">Agent autonomi: ricerca web, report, analisi documenti, gestione email.</div><span class="pc-badge">IN SVILUPPO</span></div>
+    <div class="portfolio-card"><div class="pc-icon">💬</div><div class="pc-title">Chat con AI</div><div class="pc-desc">Interfacce di chat che parlano con modelli AI via API. È quello che faccio ogni giorno su KateZoora.</div><span class="pc-badge">LIVE</span></div>
+    <div class="portfolio-card"><div class="pc-icon">🌐</div><div class="pc-title">Siti Multilingua</div><div class="pc-desc">Siti per clienti reali in più lingue (IT/EN/DE), curati dal contenuto al deploy.</div><span class="pc-badge">IN PRODUZIONE</span></div>
+    <div class="portfolio-card"><div class="pc-icon">📲</div><div class="pc-title">PWA con WebRTC</div><div class="pc-desc">App installabili con chiamate, messaggi vocali e realtime — come CaraTalk, usata da utenti veri.</div><span class="pc-badge">LIVE</span></div>
+    <div class="portfolio-card"><div class="pc-icon">📱</div><div class="pc-title">App Android (Kotlin)</div><div class="pc-desc">App native con architettura MVVM. Una è già in uso in azienda.</div><span class="pc-badge">IN PRODUZIONE</span></div>
+    <div class="portfolio-card"><div class="pc-icon">👁️</div><div class="pc-title">Riconoscimento Facciale</div><div class="pc-desc">Rilevamento del volto via webcam direttamente nel browser, integrato in questo portfolio.</div><span class="pc-badge">DEMO</span></div>
+    <div class="portfolio-card"><div class="pc-icon">🚀</div><div class="pc-title">Deploy Reale</div><div class="pc-desc">Messa online end-to-end: DuckDNS + Caddy + HTTPS + port forwarding, oppure GitHub Pages.</div><span class="pc-badge">LIVE</span></div>
   </div>
 </section>
 
@@ -425,26 +405,26 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-weight:30
 <section class="section" id="katezoora">
   <p class="sec-label rv">Katezoora AI</p>
   <h2 class="sec-title rv">Parla con<br><span style="color:var(--cyan)">l'AI.</span></h2>
-  <p class="sec-sub rv rv-d1" style="margin-bottom:2.5rem">Demo integrata — versione completa su <span style="color:var(--cyan)">katezoora.app</span></p>
+  <p class="sec-sub rv rv-d1" style="margin-bottom:2.5rem">Piccola demo integrata nel sito. Il progetto vero, <span style="color:var(--cyan)">KateZoora</span>, gira su Next.js 14 con i modelli collegati via OpenRouter.</p>
   <div class="chat-wrapper rv rv-d2">
     <div class="chips">
-      <button class="chip" onclick="chipSend(this)">Cos'è Katezoora AI?</button>
+      <button class="chip" onclick="chipSend(this)">Cos'è KateZoora?</button>
       <button class="chip" onclick="chipSend(this)">Raccontami di Kiril</button>
-      <button class="chip" onclick="chipSend(this)">Che servizi offri?</button>
-      <button class="chip" onclick="chipSend(this)">Come funziona la VPN?</button>
-      <button class="chip" onclick="chipSend(this)">Prezzi e contatti</button>
+      <button class="chip" onclick="chipSend(this)">Che cosa sai fare?</button>
+      <button class="chip" onclick="chipSend(this)">Con che stack lavori?</button>
+      <button class="chip" onclick="chipSend(this)">Come ti contatto?</button>
     </div>
     <div class="chat-header">
       <div class="chat-header-info">
         <div class="chat-status-dot"></div>
-        <div><div class="chat-header-title">Katezoora AI</div><div class="chat-header-sub">online · pronto</div></div>
+        <div><div class="chat-header-title">KateZoora</div><div class="chat-header-sub">demo · offline</div></div>
       </div>
-      <div class="chat-model-badge">katezoora-v1-demo</div>
+      <div class="chat-model-badge">demo statica</div>
     </div>
     <div class="chat-messages" id="chat-messages">
       <div class="msg">
         <div class="msg-avatar ai">K</div>
-        <div class="msg-bubble ai">Ciao! Sono <strong>Katezoora AI</strong> 👋 — come posso aiutarti?</div>
+        <div class="msg-bubble ai">Ciao! Sono la demo di <strong>KateZoora</strong> 👋 — chiedimi di Kiril, dei progetti o dello stack.</div>
       </div>
     </div>
     <div class="chat-input-area">
@@ -459,12 +439,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-weight:30
   <p class="sec-label rv">FAQ</p>
   <h2 class="sec-title rv">Domande<br><span style="color:var(--cyan)">frequenti.</span></h2>
   <div class="faq-list rv rv-d1">
-    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Hai 17 anni — posso fidarmi di te?<span class="faq-arrow">+</span></div><div class="faq-a"><p>Assolutamente sì. L'età è un numero: il codice o funziona o non funziona. Ho costruito sistemi AI, un browser, una VPN e questo sito. Giudica il lavoro.</p></div></div>
-    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Quanto costa un progetto?<span class="faq-arrow">+</span></div><div class="faq-a"><p>Landing page da 150€, chatbot AI da 300€, sito completo da 500€+. Preventivo personalizzato gratuito — contattami senza impegno.</p></div></div>
-    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Cos'è Katezoora AI?<span class="faq-arrow">+</span></div><div class="faq-a"><p>Il mio progetto principale: chat AI multi-modello con interfaccia neon, streaming real-time e backend Node.js. Disponibile come SaaS e white-label.</p></div></div>
-    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">In quanto tempo consegni?<span class="faq-arrow">+</span></div><div class="faq-a"><p>Landing page: 3-7 giorni. Sito completo: 2-4 settimane. Chatbot AI: 1-2 settimane. Aggiornamenti continui durante lo sviluppo.</p></div></div>
-    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Lavori da remoto?<span class="faq-arrow">+</span></div><div class="faq-a"><p>100% remoto. Email, Telegram, Discord, chiamata. Nessun problema di fuso orario.</p></div></div>
-    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Offri supporto post-consegna?<span class="faq-arrow">+</span></div><div class="faq-a"><p>Sì, 30 giorni di supporto bug fix inclusi. Poi piano di manutenzione mensile opzionale.</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Hai 17 anni — posso fidarmi del tuo lavoro?<span class="faq-arrow">+</span></div><div class="faq-a"><p>Giudica dal codice, non dall'età. Ho progetti veri e già online: KateZoora, CaraTalk e siti per clienti reali. È tutto verificabile.</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Cos'è KateZoora?<span class="faq-arrow">+</span></div><div class="faq-a"><p>Il mio progetto principale: una piattaforma di chat con AI su cui lavoro da quasi due anni. Next.js 14, TypeScript, Tailwind, Zustand e modelli collegati via OpenRouter.</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Con chi hai già lavorato?<span class="faq-arrow">+</span></div><div class="faq-a"><p>Collaboro con BTP Softel (Vedano Olona) su progetti web e mobile: sito aziendale, un'app Android in Kotlin e siti per clienti reali, tra cui un'azienda chimica multilingua IT/EN/DE.</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Che cosa stai cercando?<span class="faq-arrow">+</span></div><div class="faq-a"><p>Un tirocinio Erasmus nello sviluppo software, dove poter lavorare su progetti reali e imparare da un team.</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Dove studi?<span class="faq-arrow">+</span></div><div class="faq-a"><p>Informatica all'ENAIP di Varese, terzo anno da settembre 2026.</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Come ti contatto?<span class="faq-arrow">+</span></div><div class="faq-a"><p>Via email (besenes8@gmail.com) o Telegram. Di solito rispondo entro 24 ore.</p></div></div>
   </div>
 </section>
 
@@ -472,14 +452,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-weight:30
 <section class="section links-page" id="links">
   <div class="links-av rv"><div class="links-av-inner">KB</div></div>
   <div class="links-name rv rv-d1">Kiril Buzylo</div>
-  <p class="links-bio rv rv-d2">Developer · AI Builder · 17 anni · Italia</p>
+  <p class="links-bio rv rv-d2">Developer · 17 anni · Studente ENAIP Varese · Italia</p>
   <div class="links-cards rv rv-d3">
     <a href="#chi-sono" class="link-card"><span>👤 Chi sono</span><span class="link-card-arr">→</span></a>
     <a href="#katezoora" class="link-card"><span>🤖 Katezoora AI</span><span class="link-card-arr">→</span></a>
     <a href="#progetti" class="link-card"><span>🚀 Progetti</span><span class="link-card-arr">→</span></a>
     <a href="#portfolio" class="link-card"><span>💼 Portfolio</span><span class="link-card-arr">→</span></a>
-    <a href="https://github.com" target="_blank" rel="noopener" class="link-card"><span>🐙 GitHub</span><span class="link-card-arr">→</span></a>
-    <a href="https://linkedin.com" target="_blank" rel="noopener" class="link-card"><span>💼 LinkedIn</span><span class="link-card-arr">→</span></a>
+    <a href="https://github.com/KiriX999" target="_blank" rel="noopener" class="link-card"><span>🐙 GitHub</span><span class="link-card-arr">→</span></a>
+    <a href="https://kirix999.github.io/blogkiril/" target="_blank" rel="noopener" class="link-card"><span>🌐 Portfolio / Blog</span><span class="link-card-arr">→</span></a>
     <a href="https://t.me/kirilTrasher" target="_blank" rel="noopener" class="link-card"><span>📩 Telegram</span><span class="link-card-arr">→</span></a>
     <a href="#contatti" class="link-card"><span>✉️ Contattami</span><span class="link-card-arr">→</span></a>
   </div>
@@ -553,6 +533,21 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-weight:30
   <span><a href="#privacy">Privacy</a> · <a href="#privacy">Cookie Policy</a></span>
 </footer>
 
+<!-- ══ MENU-GIOCO ══ -->
+<div class="game-overlay" id="gameOverlay" role="dialog" aria-label="Menu-gioco pixel art" aria-modal="true">
+  <canvas class="game-canvas" id="gameCanvas"></canvas>
+  <div class="game-bar">
+    <p class="game-hint">Muoviti con <b>frecce</b> / <b>WASD</b><br>Entra in una <b>casetta</b> per aprire la sezione</p>
+    <button class="game-exit" id="gameExit">Esci dal gioco ✕</button>
+  </div>
+  <div class="game-pad" aria-hidden="true">
+    <button class="pad-up"    data-dir="up">▲</button>
+    <button class="pad-left"  data-dir="left">◀</button>
+    <button class="pad-right" data-dir="right">▶</button>
+    <button class="pad-down"  data-dir="down">▼</button>
+  </div>
+</div>
+
 <script>
 (function(){
 'use strict';
@@ -562,8 +557,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-weight:30
    ⚠️ Cambia ANALYTICS_URL con l'URL
    dove hai caricato analytics.php
 ════════════════════════════════ */
-const ANALYTICS_URL = ''; // ← cambia questo
-const BOT_SECRET    = 'KirilKatezoora2026Secret';           // ← deve = SECRET in analytics.php
+const ANALYTICS_URL = ''; // URL del tuo analytics.php (lato server)
+const BOT_SECRET    = ''; // NON mettere qui il secret: è codice pubblico. Va tenuto solo lato server.
 
 /* ════════════════════════════════
    ANTI-DEBUG
@@ -803,16 +798,321 @@ document.getElementById('contactForm').addEventListener('submit',async function(
 })();
 
 /* ════════════════════════════════
-   HEADER / MENU
+   HEADER
 ════════════════════════════════ */
 window.addEventListener('scroll',()=>{ document.getElementById('siteHeader').classList.toggle('scrolled',scrollY>60); },{passive:true});
-const toggle=document.getElementById('menuToggle'),overlay=document.getElementById('navOverlay');
-let menuOpen=false;
-function openMenu(){menuOpen=true;overlay.classList.add('is-open');document.body.classList.add('menu-open');document.body.style.overflow='hidden';toggle.setAttribute('aria-expanded','true');}
-function closeMenu(){menuOpen=false;overlay.classList.remove('is-open');document.body.classList.remove('menu-open');document.body.style.overflow='';toggle.setAttribute('aria-expanded','false');}
-toggle.addEventListener('click',()=>menuOpen?closeMenu():openMenu());
-document.querySelectorAll('.nav-list a').forEach(a=>a.addEventListener('click',closeMenu));
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&menuOpen)closeMenu();});
+
+/* ════════════════════════════════
+   MENU-GIOCO — mini overworld stile Pokémon
+   L'hamburger apre una piccola citta' notturna: cammini col
+   personaggio ed entri in una casetta per aprire la sezione.
+════════════════════════════════ */
+(function(){
+  const toggle  = document.getElementById('menuToggle');
+  const overlay = document.getElementById('gameOverlay');
+  const canvas  = document.getElementById('gameCanvas');
+  const exitBtn = document.getElementById('gameExit');
+  if(!toggle||!overlay||!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const clamp=(v,a,b)=> v<a?a : v>b?b : v;
+
+  // ── una casetta per sezione (colore = accento della sezione) ──
+  const HW=5, HH=4;                 // larghezza/altezza casetta in tile
+  const HOUSES=[
+    {id:'chi-sono',  label:'CHI SONO',  col:'#00ffcc', tx:2,  ty:2},
+    {id:'progetti',  label:'PROGETTI',  col:'#3b82f6', tx:10, ty:2},
+    {id:'katezoora', label:'KATEZOORA', col:'#a855f7', tx:18, ty:2},
+    {id:'servizi',   label:'SERVIZI',   col:'#a855f7', tx:2,  ty:11},
+    {id:'portfolio', label:'PORTFOLIO', col:'#00ffcc', tx:10, ty:11},
+    {id:'contatti',  label:'CONTATTI',  col:'#3b82f6', tx:18, ty:11},
+  ];
+
+  // ── mappa della citta' in tile ──
+  const MW=26, MH=19;
+  const G=[], SOLID=[], TRIG=[];    // terreno, collisioni, zerbini-trigger
+  for(let y=0;y<MH;y++){ G[y]=[]; SOLID[y]=[]; TRIG[y]=[]; for(let x=0;x<MW;x++){ G[y][x]='grass'; SOLID[y][x]=0; TRIG[y][x]=0; } }
+  const path=(x,y)=>{ if(x>0&&x<MW-1&&y>0&&y<MH-1) G[y][x]='path'; };
+  // cornice di alberi
+  for(let x=0;x<MW;x++){ G[0][x]='tree'; G[MH-1][x]='tree'; }
+  for(let y=0;y<MH;y++){ G[y][0]='tree'; G[y][MW-1]='tree'; }
+  // vialetti: due orizzontali (alto/basso) e due verticali nei varchi
+  for(let x=2;x<=22;x++){ path(x,9); path(x,16); }
+  for(let y=9;y<=16;y++){ path(8,y); path(16,y); }
+  // casette: footprint solido, porta in basso, zerbino che apre la sezione
+  HOUSES.forEach(h=>{
+    for(let y=h.ty;y<h.ty+HH;y++) for(let x=h.tx;x<h.tx+HW;x++) SOLID[y][x]=1;
+    const dx=h.tx+2, mat=h.ty+HH;
+    path(dx,mat); TRIG[mat][dx]=h.id;
+    const end = mat<9?9:16;
+    for(let y=Math.min(mat+1,end); y<=Math.max(mat+1,end); y++) path(dx,y);
+    h.dx=dx; h.mat=mat;
+  });
+  // laghetto, alberi e fiori: posizioni scelte a mano (saltate se occupate)
+  [[6,7],[7,7],[6,8],[7,8]].forEach(([x,y])=>{ if(!SOLID[y][x]&&G[y][x]==='grass') G[y][x]='water'; });
+  [[13,7],[17,7],[13,10],[9,13],[17,13],[21,7]].forEach(([x,y])=>{ if(!SOLID[y][x]&&G[y][x]==='grass') G[y][x]='tree'; });
+  [[5,7],[9,10],[20,10],[6,13],[13,13],[24,9],[9,7],[19,13]].forEach(([x,y])=>{ if(!SOLID[y][x]&&G[y][x]==='grass') G[y][x]='flower'; });
+  // aggiorna collisioni per alberi/acqua
+  for(let y=0;y<MH;y++) for(let x=0;x<MW;x++) if(G[y][x]==='tree'||G[y][x]==='water') SOLID[y][x]=1;
+
+  // ── sprite del personaggio 16x16 (4 direzioni, side speculare a sx) ──
+  // K bordo · H capelli · F pelle · E occhi · S maglia · A braccia · P pantaloni · B scarpe
+  const SPR_DOWN=[
+    '......KKKK......','....KKHHHHKK....','...KHHHHHHHHK...','...KHFFFFFFHK...',
+    '...KHFFFFFFHK...','...KFFEFFEFFK...','...KFFFFFFFFK...','...KKFFFFFFKK...',
+    '....KSSSSSSK....','...KSSSSSSSSK...','..KASSSSSSSSAK..','..KASSSSSSSSAK..',
+    '...KSSPPPPSSK...','...KPPPPPPPPK...','...KPPK..KPPK...','...KBBK..KBBK...',
+  ];
+  const SPR_UP=[
+    '......KKKK......','....KKHHHHKK....','...KHHHHHHHHK...','...KHHHHHHHHK...',
+    '...KHHHHHHHHK...','...KHHHHHHHHK...','...KHHHHHHHHK...','...KKHHHHHHKK...',
+    '....KSSSSSSK....','...KSSSSSSSSK...','..KASSSSSSSSAK..','..KASSSSSSSSAK..',
+    '...KSSPPPPSSK...','...KPPPPPPPPK...','...KPPK..KPPK...','...KBBK..KBBK...',
+  ];
+  const SPR_SIDE=[
+    '......KKKK......','....KKHHHHKK....','...KHHHHHHHHK...','...KHHHHFFFFK...',
+    '...KHHHFFFFFK...','...KHHFFEFFFK...','...KHFFFFFFFK...','...KKFFFFFFKK...',
+    '....KSSSSSSK....','...KSSSSSSSAK...','..KSSSSSSSSAK...','...KSSSSSSSAK...',
+    '...KSSPPPPSSK...','...KPPPPPPPPK...','....KPPPPPPK....','....KBBKKBBK....',
+  ];
+  const PAL={K:'#0b1020',H:'#2ff0d0',F:'#f1c9a5',E:'#0b1020',S:'#00d9c0',A:'#f1c9a5',P:'#2b3f8f',B:'#10131f'};
+  const PAL_NPC=[
+    Object.assign({},PAL,{H:'#c084fc',S:'#a855f7',P:'#3b2a5a'}),
+    Object.assign({},PAL,{H:'#60a5fa',S:'#3b82f6',P:'#1e2a55'}),
+    Object.assign({},PAL,{H:'#f59e0b',S:'#e0894b',P:'#3a2c1e'}),
+  ];
+  const spriteFor=d=> d==='up'?SPR_UP : d==='down'?SPR_DOWN : SPR_SIDE;
+
+  // qualche personaggio non giocante, per dare vita alla citta'
+  const NPCS=[
+    {tx:12,ty:7,  dir:'down', pal:0, t:0, seed:0.3},
+    {tx:5, ty:8,  dir:'right',pal:1, t:0, seed:1.1},
+    {tx:20,ty:8,  dir:'left', pal:2, t:0, seed:2.4},
+  ];
+
+  // ── stato ──
+  let open=false, raf=0, W=0,H=0, TS=44, worldW=0,worldH=0, offX=0,offY=0, camX=0,camY=0, charPx=4, t=0,last=0, entering=null;
+  const player={x:0,y:0,vx:0,vy:0,dir:'down',step:0,spawned:false};
+  const keys={};
+  const toSX=wx=> wx-camX+offX, toSY=wy=> wy-camY+offY;
+
+  function layout(){
+    const dpr=Math.min(2,devicePixelRatio||1);
+    W=innerWidth; H=innerHeight;
+    canvas.width=Math.floor(W*dpr); canvas.height=Math.floor(H*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.imageSmoothingEnabled=false;
+    TS=Math.max(28, Math.min(64, Math.floor(Math.min(W/12.5, H/8.5))));
+    worldW=MW*TS; worldH=MH*TS;
+    offX = worldW<W ? (W-worldW)/2 : 0;
+    offY = worldH<H ? (H-worldH)/2 : 0;
+    charPx = Math.max(2, Math.round(TS/11));
+    if(!player.spawned){ player.x=(13+0.5)*TS; player.y=(9+0.9)*TS; player.spawned=true; }
+  }
+
+  function solidAt(tx,ty){ return (tx<0||ty<0||tx>=MW||ty>=MH) ? 1 : SOLID[ty][tx]; }
+  function collide(fx,fy){
+    const bw=TS*0.42, bh=TS*0.30;
+    for(let ty=Math.floor((fy-bh)/TS); ty<=Math.floor(fy/TS); ty++)
+      for(let tx=Math.floor((fx-bw/2)/TS); tx<=Math.floor((fx+bw/2)/TS); tx++)
+        if(solidAt(tx,ty)) return true;
+    return false;
+  }
+  function dirFromVel(vx,vy){ return Math.abs(vx)>Math.abs(vy) ? (vx>0?'right':'left') : (vy>0?'down':'up'); }
+
+  function update(dt){
+    if(entering) return;
+    let ax=0,ay=0;
+    if(keys.left)ax--; if(keys.right)ax++; if(keys.up)ay--; if(keys.down)ay++;
+    if(ax&&ay){ ax*=0.71; ay*=0.71; }
+    const sp=TS*0.085;
+    player.vx=ax*sp; player.vy=ay*sp;
+    const nx=player.x+player.vx; if(!collide(nx,player.y)) player.x=nx;
+    const ny=player.y+player.vy; if(!collide(player.x,ny)) player.y=ny;
+    if(player.vx||player.vy){ player.dir=dirFromVel(player.vx,player.vy); if(!reduce) player.step+=dt*0.013; }
+    for(const n of NPCS){ n.t+=dt; if(n.t>1400){ n.t=0; n.dir=['down','up','left','right'][(Math.random()*4)|0]; } }
+    const tx=Math.floor(player.x/TS), ty=Math.floor(player.y/TS);
+    const id = (ty>=0&&ty<MH&&tx>=0&&tx<MW) ? TRIG[ty][tx] : 0;
+    if(id) enter(id);
+  }
+
+  function enter(id){
+    entering=id;
+    setTimeout(()=>{
+      close();
+      const el=document.getElementById(id);
+      if(el) el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
+      entering=null;
+    }, reduce?0:220);
+  }
+
+  // scurisce un colore verso il nero (per ombre/tetti)
+  function shade(hex,f){ const n=parseInt(hex.slice(1),16), r=(n>>16)&255,g=(n>>8)&255,b=n&255, m=v=>Math.round(v*(1-f)); return 'rgb('+m(r)+','+m(g)+','+m(b)+')'; }
+
+  function drawGround(tx,ty){
+    const sx=Math.round(toSX(tx*TS)), sy=Math.round(toSY(ty*TS)), s=TS+1, g=G[ty][tx];
+    ctx.fillStyle = ((tx+ty)&1) ? '#0e2018' : '#10251c';   // erba a scacchi soft
+    ctx.fillRect(sx,sy,s,s);
+    if(g==='path'){
+      ctx.fillStyle='#2a3350'; ctx.fillRect(sx,sy,s,s);
+      ctx.fillStyle='rgba(255,255,255,.045)'; ctx.fillRect(sx,sy,s,2);
+    } else if(g==='water'){
+      ctx.fillStyle='#0b2f4d'; ctx.fillRect(sx,sy,s,s);
+      ctx.fillStyle='rgba(0,255,204,.16)';
+      const o=reduce?0:(Math.sin(t*0.003+tx)+1)*TS*0.18;
+      ctx.fillRect(sx+4, sy+TS*0.35+o, TS*0.5, 2);
+    } else if(g==='flower'){
+      ctx.fillStyle = ((tx*7+ty)&1) ? '#00ffcc' : '#c084fc';
+      ctx.fillRect(sx+TS*0.44, sy+TS*0.42, TS*0.13, TS*0.13);
+      ctx.fillStyle='rgba(255,255,255,.7)'; ctx.fillRect(sx+TS*0.49, sy+TS*0.47, TS*0.04, TS*0.04);
+    } else {
+      const hsh=(tx*928371+ty*1237)&255;
+      if(hsh%9===0){ ctx.fillStyle='rgba(0,255,204,.09)'; ctx.fillRect(sx+TS*0.3, sy+TS*0.55, 2, TS*0.18); }
+    }
+    if(g==='tree'){
+      ctx.fillStyle='#241812'; ctx.fillRect(sx+TS*0.42, sy+TS*0.52, TS*0.16, TS*0.42);
+      ctx.fillStyle='#0c2a1c'; ctx.beginPath(); ctx.arc(sx+TS*0.5, sy+TS*0.4, TS*0.4, 0, 7); ctx.fill();
+      ctx.strokeStyle='rgba(0,255,150,.28)'; ctx.lineWidth=2; ctx.stroke();
+      ctx.fillStyle='rgba(0,255,180,.35)'; ctx.fillRect(sx+TS*0.36,sy+TS*0.3,2,2); ctx.fillRect(sx+TS*0.6,sy+TS*0.46,2,2);
+    }
+  }
+
+  function drawHouse(h){
+    const px=toSX(h.tx*TS), py=toSY(h.ty*TS), w=HW*TS, hh=HH*TS;
+    const roofH=hh*0.44, wallTop=py+roofH, wallH=hh-roofH;
+    ctx.fillStyle='rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(px+w/2, py+hh, w*0.5, TS*0.26, 0, 0, 7); ctx.fill();
+    // muro
+    const wg=ctx.createLinearGradient(0,wallTop,0,py+hh); wg.addColorStop(0,'#171b2b'); wg.addColorStop(1,'#0f1220');
+    ctx.fillStyle=wg; ctx.fillRect(px+TS*0.2, wallTop, w-TS*0.4, wallH);
+    ctx.strokeStyle=h.col; ctx.lineWidth=2; ctx.strokeRect(px+TS*0.2, wallTop, w-TS*0.4, wallH);
+    // finestre illuminate
+    ctx.globalAlpha=.5; ctx.fillStyle=h.col;
+    ctx.fillRect(px+w*0.24, wallTop+wallH*0.26, TS*0.55, TS*0.55);
+    ctx.fillRect(px+w*0.62, wallTop+wallH*0.26, TS*0.55, TS*0.55);
+    ctx.globalAlpha=1;
+    // tetto
+    ctx.beginPath(); ctx.moveTo(px, wallTop+2); ctx.lineTo(px+w*0.5, py); ctx.lineTo(px+w, wallTop+2); ctx.closePath();
+    const rg=ctx.createLinearGradient(0,py,0,wallTop); rg.addColorStop(0,h.col); rg.addColorStop(1,shade(h.col,.55));
+    ctx.fillStyle=rg; ctx.fill(); ctx.strokeStyle=h.col; ctx.lineWidth=2; ctx.stroke();
+    // porta
+    const dcx=toSX((h.dx+0.5)*TS), dW=TS*0.62, dH=wallH*0.74, dX=dcx-dW/2, dY=py+hh-dH;
+    ctx.fillStyle=shade(h.col,.3); ctx.fillRect(dX,dY,dW,dH);
+    ctx.fillStyle='rgba(0,0,0,.55)'; ctx.fillRect(dX+2,dY+2,dW-4,dH-4);
+    ctx.fillStyle=h.col; ctx.fillRect(dX+dW*0.72, dY+dH*0.46, 3, 3);       // maniglia
+    if(!reduce){ ctx.strokeStyle=h.col; ctx.lineWidth=2; ctx.globalAlpha=.35+.35*Math.abs(Math.sin(t*0.004)); ctx.strokeRect(dX,dY,dW,dH); ctx.globalAlpha=1; }
+    // insegna col nome, accanto alla porta
+    const sgx=toSX((h.dx-1)*TS)+TS*0.1, base=py+hh-TS*0.15;
+    ctx.fillStyle='#241812'; ctx.fillRect(sgx+TS*0.32, base-TS*0.5, TS*0.1, TS*0.55);
+    const bw=TS*1.2, bh=TS*0.42, bx=sgx-TS*0.05, by=base-TS*0.95;
+    ctx.fillStyle='#0b0f1a'; ctx.fillRect(bx,by,bw,bh);
+    ctx.strokeStyle=h.col; ctx.lineWidth=2; ctx.strokeRect(bx,by,bw,bh);
+    ctx.fillStyle=h.col; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font='700 '+Math.max(8,Math.round(TS*0.2))+'px "Space Mono",monospace';
+    ctx.fillText(h.label, bx+bw/2, by+bh/2+1);
+  }
+
+  function drawChar(rows,pal,fx,fy,dir,moving,phase){
+    const px=charPx, sw=16*px, frame=Math.floor(phase)%2;
+    const bob=(moving&&!reduce&&frame) ? -Math.max(1,px*0.5) : 0;
+    const topX=Math.round(fx-sw/2), topY=Math.round(fy-16*px);
+    ctx.fillStyle='rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(fx, fy-px, sw*0.3, px*1.3, 0, 0, 7); ctx.fill();
+    ctx.save();
+    if(dir==='left'){ ctx.translate(fx,0); ctx.scale(-1,1); ctx.translate(-fx,0); }
+    for(let r=0;r<rows.length;r++){ const row=rows[r];
+      for(let c=0;c<row.length;c++){ const col=pal[row[c]]; if(!col) continue;
+        const ox=(r>=13&&moving&&!reduce) ? (frame?1:-1)*px : 0;
+        ctx.fillStyle=col; ctx.fillRect(topX+c*px+ox, topY+r*px+bob, px, px);
+      }
+    }
+    ctx.restore();
+  }
+  function drawPlayer(){ drawChar(spriteFor(player.dir), PAL, toSX(player.x), toSY(player.y), player.dir, !!(player.vx||player.vy), player.step); }
+  function drawNpc(n){
+    const breath = reduce?0 : Math.sin(t*0.004+n.seed)*charPx*0.4;
+    drawChar(spriteFor(n.dir), PAL_NPC[n.pal], toSX((n.tx+0.5)*TS), toSY((n.ty+0.95)*TS)+breath, n.dir, false, 0);
+  }
+
+  function draw(){
+    ctx.fillStyle='#07120d'; ctx.fillRect(0,0,W,H);
+    const x0=Math.max(0,Math.floor(camX/TS)-1), x1=Math.min(MW-1,Math.floor((camX+W)/TS)+1);
+    const y0=Math.max(0,Math.floor(camY/TS)-1), y1=Math.min(MH-1,Math.floor((camY+H)/TS)+1);
+    for(let ty=y0;ty<=y1;ty++) for(let tx=x0;tx<=x1;tx++) drawGround(tx,ty);
+    for(const h of HOUSES) drawHouse(h);
+    // ordina per profondita' (chi sta piu' in basso passa davanti)
+    const ents=NPCS.map(n=>({y:(n.ty+0.95)*TS,f:()=>drawNpc(n)}));
+    ents.push({y:player.y, f:drawPlayer});
+    ents.sort((a,b)=>a.y-b.y);
+    for(const e of ents) e.f();
+    if(entering){ ctx.fillStyle='rgba(255,255,255,'+(reduce?0.12:0.4)+')'; ctx.fillRect(0,0,W,H); }
+    if(!reduce){
+      const vg=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.35, W/2,H/2,Math.max(W,H)*0.7);
+      vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.5)');
+      ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+    }
+  }
+
+  function frame(ts){
+    if(!open) return;
+    const dt=Math.min(50,(ts-last)||16); last=ts; t=ts;
+    update(dt);
+    camX=clamp(player.x-W/2, 0, Math.max(0,worldW-W));
+    camY=clamp(player.y-H/2, 0, Math.max(0,worldH-H));
+    draw();
+    raf=requestAnimationFrame(frame);
+  }
+
+  function openGame(){
+    if(open) return; open=true;
+    overlay.classList.add('is-open');
+    document.body.classList.add('menu-open');
+    document.body.style.overflow='hidden';
+    toggle.setAttribute('aria-expanded','true');
+    player.spawned=false; player.dir='down'; player.step=0; entering=null;
+    layout();
+    last=performance.now(); raf=requestAnimationFrame(frame);
+  }
+  function close(){
+    if(!open) return; open=false;
+    cancelAnimationFrame(raf);
+    for(const k in keys) keys[k]=false;
+    overlay.classList.remove('is-open');
+    document.body.classList.remove('menu-open');
+    document.body.style.overflow='';
+    toggle.setAttribute('aria-expanded','false');
+  }
+
+  function dirOf(k){
+    switch(k){
+      case 'ArrowUp': case 'w': case 'W': return 'up';
+      case 'ArrowDown': case 's': case 'S': return 'down';
+      case 'ArrowLeft': case 'a': case 'A': return 'left';
+      case 'ArrowRight': case 'd': case 'D': return 'right';
+    }
+    return null;
+  }
+
+  toggle.addEventListener('click',()=> open?close():openGame());
+  exitBtn.addEventListener('click',close);
+  addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&open){ close(); return; }
+    if(!open) return;
+    const d=dirOf(e.key); if(d){ keys[d]=true; e.preventDefault(); }
+  });
+  addEventListener('keyup',e=>{ const d=dirOf(e.key); if(d) keys[d]=false; });
+  addEventListener('resize',()=>{ if(open) layout(); },{passive:true});
+
+  // d-pad touch
+  document.querySelectorAll('.game-pad button').forEach(b=>{
+    const d=b.dataset.dir;
+    const on=e=>{ e.preventDefault(); keys[d]=true; };
+    const off=e=>{ e.preventDefault(); keys[d]=false; };
+    b.addEventListener('touchstart',on,{passive:false});
+    b.addEventListener('touchend',off);
+    b.addEventListener('touchcancel',off);
+    b.addEventListener('mousedown',on);
+    addEventListener('mouseup',off);
+  });
+})();
 
 /* ════════════════════════════════
    SCROLL REVEAL
@@ -839,9 +1139,9 @@ window.toggleFaq=function(el){
   if(!body||!input)return;
   const cmds={
     help:()=>['<span class="t-ok">Comandi:</span>','  <span class="t-prompt">whoami</span> — info su Kiril','  <span class="t-prompt">projects</span> — lista progetti','  <span class="t-prompt">skills</span> — stack tecnologico','  <span class="t-prompt">matrix</span> — 🟢','  <span class="t-prompt">hack</span> — prova 😏','  <span class="t-prompt">clear</span> — pulisci'],
-    whoami:()=>['<span class="t-ok">→ Kiril Buzylo</span>','  Età: 17 | Developer & AI Builder | Italia 🇮🇹'],
-    projects:()=>['<span class="t-ok">→ Progetti:</span>','  [01] Katezoora AI    — <span class="t-ok">LIVE</span>','  [02] Katezoora Browser — <span class="t-warn">BETA</span>','  [03] Katezoora VPN   — <span class="t-warn">WIP</span>'],
-    skills:()=>['<span class="t-ok">→ Stack:</span>','  JS/Node ████████░  Python ███████░  AI/LLM ████████  PHP █████░'],
+    whoami:()=>['<span class="t-ok">→ Kiril Buzylo</span>','  Età: 17 | Studente Informatica ENAIP Varese | Italia 🇮🇹'],
+    projects:()=>['<span class="t-ok">→ Progetti:</span>','  [01] KateZoora   — <span class="t-ok">LIVE</span>','  [02] CaraTalk    — <span class="t-ok">LIVE</span>','  [03] Portfolio   — <span class="t-ok">LIVE</span>'],
+    skills:()=>['<span class="t-ok">→ Stack:</span>','  TS/Next ███████░  JS ████████  Kotlin ██████░  Python █████░  PHP █████░'],
     hack:()=>['<span class="t-warn">⚠ Tentativo rilevato. IP tracciato.</span>','<span class="t-comment">// scherzo 😂 — usa "help"</span>'],
     matrix:()=>{ startMatrix(); return ['<span class="t-ok">Matrix ON. Clicca per uscire.</span>']; },
     clear:()=>{ body.innerHTML=''; appendPrompt(); return null; },
@@ -873,20 +1173,20 @@ window.toggleFaq=function(el){
    CHATBOT DEMO
 ════════════════════════════════ */
 const demoR={
-  default:['Kiril è un developer straordinario per i suoi 17 anni. Ha costruito questo ecosistema da zero! 🚀','Domanda interessante! Kiril lavora con Node.js, Python, PHP e JS. Specialità: integrazione AI.','Sono Katezoora AI di Kiril. Per la versione completa: katezoora.app 🤖'],
-  katezoora:'Katezoora AI è il progetto principale! 🧠 Chat multi-modello, streaming SSE, Three.js, GPT-4o e Claude 3.5. Node.js + OpenRouter.',
-  kiril:'Kiril Buzylo, 17 anni, developer serio. Ha costruito Katezoora AI, un browser Electron e una VPN. Tutto da solo. 💪',
-  servizi:'Sviluppo web full-stack, chatbot AI custom, automazioni, UI/UX, sicurezza, Electron, API REST, DevOps. Preventivo: besenes8@gmail.com!',
-  vpn:'WireGuard/OpenVPN, pannello web custom, zero log, crittografia E2E, kill switch. In sviluppo — presto disponibile!',
-  prezzi:'Landing page 150€, chatbot AI 300€, sito completo 500€+. Preventivo gratuito → besenes8@gmail.com',
+  default:['Kiril ha 17 anni e ha già progetti reali e online — cosa rara alla sua età. 🚀','Kiril lavora con TypeScript, Next.js, Kotlin, Python e PHP. La sua specialità è integrare l\'AI nelle app.','Sono solo una demo statica nel sito. Il vero KateZoora gira su Next.js con i modelli via OpenRouter. 🤖'],
+  katezoora:'KateZoora è il progetto principale di Kiril: una chat con AI su cui lavora da quasi due anni. Next.js 14, TypeScript, Tailwind, Zustand e modelli collegati via OpenRouter. 🧠',
+  kiril:'Kiril Buzylo, 17 anni, studente di Informatica all\'ENAIP di Varese. Collabora con BTP Softel e porta avanti KateZoora e CaraTalk. 💪',
+  servizi:'Siti su misura, web app Next.js, integrazione AI, app Android in Kotlin, PWA con WebRTC e deploy reale con HTTPS. Scrivimi: besenes8@gmail.com',
+  stack:'Stack: TypeScript, React/Next.js, Tailwind, Zustand, Kotlin (Android/MVVM), Python, PHP, Firebase, WebRTC e integrazione AI via OpenRouter.',
+  contatti:'Puoi scrivere a besenes8@gmail.com o su Telegram. Rispondo di solito entro 24 ore. ✉️',
 };
 function getDemoR(msg){
   const m=msg.toLowerCase();
-  if(m.includes('katezoora')&&!m.includes('kiril'))return demoR.katezoora;
+  if(m.includes('katezoora'))return demoR.katezoora;
   if(m.includes('kiril')||m.includes('chi sei'))return demoR.kiril;
-  if(m.includes('servizi')||m.includes('cosa fai'))return demoR.servizi;
-  if(m.includes('vpn'))return demoR.vpn;
-  if(m.includes('prezzi')||m.includes('costo')||m.includes('quanto'))return demoR.prezzi;
+  if(m.includes('stack')||m.includes('tecnolog')||m.includes('linguagg'))return demoR.stack;
+  if(m.includes('serviz')||m.includes('cosa sai')||m.includes('cosa fai')||m.includes('puoi fare'))return demoR.servizi;
+  if(m.includes('contatt')||m.includes('email')||m.includes('scriv')||m.includes('telegram'))return demoR.contatti;
   return demoR.default[Math.floor(Math.random()*3)];
 }
 function addMsg(role,text){
@@ -900,7 +1200,7 @@ window.sendDemo=async function(){
   const inp=document.getElementById('demo-input'),btn=document.getElementById('demo-send');
   const text=inp.value.trim().slice(0,500);if(!text)return;
   const n=parseInt(sessionStorage.getItem('k_chat')||'0');
-  if(n>=15){addMsg('ai','⚠ Limite demo raggiunto. Vai su katezoora.app!');inp.value='';return;}
+  if(n>=15){addMsg('ai','⚠ Limite demo raggiunto. Scrivimi a besenes8@gmail.com!');inp.value='';return;}
   sessionStorage.setItem('k_chat',n+1);
   inp.value='';btn.disabled=true;addMsg('user',sanitize(text));
   const msgs=document.getElementById('chat-messages');
