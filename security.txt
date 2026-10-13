@@ -1,0 +1,8 @@
+# Segnalazione responsabile di vulnerabilità — Kiril Buzylo
+# Responsible disclosure policy (RFC 9116)
+Contact: mailto:besenes8@gmail.com
+Contact: https://t.me/kirilTrasher
+Expires: 2027-10-13T00:00:00.000Z
+Preferred-Languages: it, en
+Canonical: https://kirix999.github.io/blogkiril/.well-known/security.txt
+Policy: https://kirix999.github.io/blogkiril/#privacy
